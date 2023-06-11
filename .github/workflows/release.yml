@@ -1,0 +1,33 @@
+name: Release to NuGet
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    
+    runs-on: ubuntu-latest
+    
+    timeout-minutes: 5
+    
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          5.x
+          6.x
+          7.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test
+      run: dotnet test -c Release --no-build --verbosity normal
+    - name: Pack nugets
+      run: dotnet pack -c Release --no-build --output .
+    - name: Push to NuGet
+      run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+      
