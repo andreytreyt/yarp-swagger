@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Yarp.ReverseProxy.Swagger;
 
-public class ReverseProxyDocumentFilterConfig
+public sealed class ReverseProxyDocumentFilterConfig
 {
     public IReadOnlyDictionary<string, Cluster> Clusters { get; init; }
     

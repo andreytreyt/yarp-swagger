@@ -7,7 +7,7 @@ using Yarp.ReverseProxy.Swagger.Extensions;
 
 namespace Yarp.ReverseProxy.Swagger;
 
-public class ReverseProxyDocumentFilter : IDocumentFilter
+public sealed class ReverseProxyDocumentFilter : IDocumentFilter
 {
     private readonly ReverseProxyDocumentFilterConfig _config;
 
