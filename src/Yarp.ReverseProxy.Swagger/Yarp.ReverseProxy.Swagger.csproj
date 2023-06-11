@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <PackageId>Treyt.Yarp.ReverseProxy.Swagger</PackageId>
-        <Version>1.0.0-alpha</Version>
+        <Version>1.0.0</Version>
         <Authors>Andrei Tsaregorodtsev</Authors>
         <PackageProjectUrl>https://github.com/andreytreyt/yarp-swagger</PackageProjectUrl>
     </PropertyGroup>
