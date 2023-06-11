@@ -8,8 +8,8 @@ jobs:
   build:
     
     runs-on: ubuntu-latest
-    
     timeout-minutes: 5
+    working-directory: ./src
     
     steps:
     - uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
     - name: Test
       run: dotnet test -c Release --no-build --verbosity normal
     - name: Pack nugets
-      run: dotnet pack /src/Yarp.ReverseProxy.Swagger/Yarp.ReverseProxy.Swagger.csproj -c Release --no-build --output .
+      run: dotnet pack -c Release --no-build --output .
     - name: Push to NuGet
       run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
       
