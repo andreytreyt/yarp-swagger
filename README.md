@@ -1,3 +1,5 @@
+![dotnet_main](https://github.com/andreytreyt/yarp-swagger/actions/workflows/dotnet.yml/badge.svg?branch=main)
+
 ## Introduction
 
 It's an easy to use Swagger extension for [the YARP project](https://github.com/microsoft/reverse-proxy).
