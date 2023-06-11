@@ -93,6 +93,6 @@ app.UseSwaggerUI(options =>
 });
 ```
 
-After run you will get a generated Swagger schemes by clusters:
+After run you will get generated Swagger files by clusters:
 
 ![](README.png)
