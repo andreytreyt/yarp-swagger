@@ -95,4 +95,4 @@ app.UseSwaggerUI(options =>
 
 After run you will get generated Swagger files by clusters:
 
-![](README.png)
+![image]([README.png](https://github.com/andreytreyt/yarp-swagger/blob/main/README.png?raw=true)https://github.com/andreytreyt/yarp-swagger/blob/main/README.png?raw=true)
