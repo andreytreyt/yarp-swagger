@@ -1,29 +1,30 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Yarp.ReverseProxy.Swagger;
-
-public sealed class ReverseProxyDocumentFilterConfig
+namespace Yarp.ReverseProxy.Swagger
 {
-    public IReadOnlyDictionary<string, Cluster> Clusters { get; init; }
-    
-    public class Cluster
+    public sealed class ReverseProxyDocumentFilterConfig
     {
-        public IReadOnlyDictionary<string, Destination> Destinations { get; init; }
-        
-        public class Destination
+        public IReadOnlyDictionary<string, Cluster> Clusters { get; init; }
+
+        public class Cluster
         {
-            public string Address { get; init; }
-            public IReadOnlyList<Swagger> Swaggers { get; init; }
-            
-            public class Swagger
+            public IReadOnlyDictionary<string, Destination> Destinations { get; init; }
+
+            public class Destination
             {
-                public string PrefixPath { get; init; }
-                public IReadOnlyList<string> Paths { get; init; }
+                public string Address { get; init; }
+                public IReadOnlyList<Swagger> Swaggers { get; init; }
+
+                public class Swagger
+                {
+                    public string PrefixPath { get; init; }
+                    public IReadOnlyList<string> Paths { get; init; }
+                }
             }
         }
+
+        public static ReverseProxyDocumentFilterConfig Empty => new();
+        public bool IsEmpty => Clusters?.Any() != true;
     }
-    
-    public static ReverseProxyDocumentFilterConfig Empty => new();
-    public bool IsEmpty => Clusters?.Any() != true;
 }
