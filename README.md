@@ -41,23 +41,23 @@ Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/Con
 ```csharp
 public void Configure(SwaggerGenOptions options)
 {
-    var reverseProxyDocumentFilterConfig = _serviceProvider.GetService<ReverseProxyDocumentFilterConfig>();
-    if (reverseProxyDocumentFilterConfig != null)
+    var filterDescriptors = new List<FilterDescriptor>();
+        
+    foreach (var reverseProxyDocumentFilterConfig in _reverseProxyDocumentFilterConfigs)
     {
         foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
         {
             options.SwaggerDoc(cluster.Key, new OpenApiInfo { Title = cluster.Key, Version = cluster.Key });
         }
-            
-        options.DocumentFilterDescriptors = new List<FilterDescriptor>
+        
+        filterDescriptors.Add(new FilterDescriptor
         {
-            new FilterDescriptor
-            {
-                Type = typeof(ReverseProxyDocumentFilter),
-                Arguments = new object[]{ reverseProxyDocumentFilterConfig }
-            }
-        };
+            Type = typeof(ReverseProxyDocumentFilter),
+            Arguments = new object[]{ reverseProxyDocumentFilterConfig }
+        });
     }
+
+    options.DocumentFilterDescriptors = filterDescriptors;
 }
 ```
 
@@ -82,13 +82,10 @@ builder.Services
 ```csharp
 app.UseSwaggerUI(options =>
 {
-    var reverseProxyDocumentFilterConfig = app.Services.GetService<ReverseProxyDocumentFilterConfig>();
-    if (reverseProxyDocumentFilterConfig != null)
+    var reverseProxyDocumentFilterConfigs = app.Services.GetServices<ReverseProxyDocumentFilterConfig>();
+    foreach (var cluster in reverseProxyDocumentFilterConfigs.SelectMany(x => x.Clusters))
     {
-        foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
-        {
-            options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
-        }
+        options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
     }
 });
 ```
