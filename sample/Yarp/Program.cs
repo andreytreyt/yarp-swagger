@@ -27,13 +27,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        var gatewayDocumentFilterConfig = app.Services.GetService<ReverseProxyDocumentFilterConfig>();
-        if (gatewayDocumentFilterConfig != null)
+        var reverseProxyDocumentFilterConfigs = app.Services.GetServices<ReverseProxyDocumentFilterConfig>();
+        foreach (var cluster in reverseProxyDocumentFilterConfigs
+                     .SelectMany(x => x.Clusters))
         {
-            foreach (var cluster in gatewayDocumentFilterConfig.Clusters)
-            {
-                options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
-            }
+            options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
         }
     });
 }

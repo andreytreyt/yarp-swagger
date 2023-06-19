@@ -41,10 +41,10 @@ Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/Con
 ```csharp
 public void Configure(SwaggerGenOptions options)
 {
-    var gatewayDocumentFilterConfig = _serviceProvider.GetService<ReverseProxyDocumentFilterConfig>();
-    if (gatewayDocumentFilterConfig != null)
+    var reverseProxyDocumentFilterConfig = _serviceProvider.GetService<ReverseProxyDocumentFilterConfig>();
+    if (reverseProxyDocumentFilterConfig != null)
     {
-        foreach (var cluster in gatewayDocumentFilterConfig.Clusters)
+        foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
         {
             options.SwaggerDoc(cluster.Key, new OpenApiInfo { Title = cluster.Key, Version = cluster.Key });
         }
@@ -54,7 +54,7 @@ public void Configure(SwaggerGenOptions options)
             new FilterDescriptor
             {
                 Type = typeof(ReverseProxyDocumentFilter),
-                Arguments = new object[]{ gatewayDocumentFilterConfig }
+                Arguments = new object[]{ reverseProxyDocumentFilterConfig }
             }
         };
     }
@@ -82,10 +82,10 @@ builder.Services
 ```csharp
 app.UseSwaggerUI(options =>
 {
-    var gatewayDocumentFilterConfig = app.Services.GetService<ReverseProxyDocumentFilterConfig>();
-    if (gatewayDocumentFilterConfig != null)
+    var reverseProxyDocumentFilterConfig = app.Services.GetService<ReverseProxyDocumentFilterConfig>();
+    if (reverseProxyDocumentFilterConfig != null)
     {
-        foreach (var cluster in gatewayDocumentFilterConfig.Clusters)
+        foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
         {
             options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
         }
