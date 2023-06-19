@@ -7,31 +7,31 @@ namespace Yarp;
 
 public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IEnumerable<ReverseProxyDocumentFilterConfig> _reverseProxyDocumentFilterConfigs;
 
-    public ConfigureSwaggerOptions(IServiceProvider serviceProvider)
+    public ConfigureSwaggerOptions(IEnumerable<ReverseProxyDocumentFilterConfig> reverseProxyDocumentFilterConfigs)
     {
-        _serviceProvider = serviceProvider;
+        _reverseProxyDocumentFilterConfigs = reverseProxyDocumentFilterConfigs;
     }
 
     public void Configure(SwaggerGenOptions options)
     {
-        var gatewayDocumentFilterConfig = _serviceProvider.GetService<ReverseProxyDocumentFilterConfig>();
-        if (gatewayDocumentFilterConfig != null)
+        var filterDescriptors = new List<FilterDescriptor>();
+        
+        foreach (var reverseProxyDocumentFilterConfig in _reverseProxyDocumentFilterConfigs)
         {
-            foreach (var cluster in gatewayDocumentFilterConfig.Clusters)
+            foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
             {
                 options.SwaggerDoc(cluster.Key, new OpenApiInfo { Title = cluster.Key, Version = cluster.Key });
             }
-                
-            options.DocumentFilterDescriptors = new List<FilterDescriptor>
+            
+            filterDescriptors.Add(new FilterDescriptor
             {
-                new FilterDescriptor
-                {
-                    Type = typeof(ReverseProxyDocumentFilter),
-                    Arguments = new object[]{ gatewayDocumentFilterConfig }
-                }
-            };
+                Type = typeof(ReverseProxyDocumentFilter),
+                Arguments = new object[]{ reverseProxyDocumentFilterConfig }
+            });
         }
+
+        options.DocumentFilterDescriptors = filterDescriptors;
     }
 }

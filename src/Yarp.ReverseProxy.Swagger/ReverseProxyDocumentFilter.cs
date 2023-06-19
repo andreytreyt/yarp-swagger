@@ -44,7 +44,7 @@ public sealed class ReverseProxyDocumentFilter : IDocumentFilter
                     continue;
                 }
                     
-                foreach (string swaggerPath in swagger.Paths)
+                foreach (var swaggerPath in swagger.Paths)
                 {
                     var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
                     var doc = new OpenApiStreamReader().Read(stream, out _);
