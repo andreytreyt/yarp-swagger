@@ -1,6 +1,6 @@
 ![dotnet_main](https://github.com/andreytreyt/yarp-swagger/actions/workflows/dotnet.yml/badge.svg?branch=main)
 ![release](https://github.com/andreytreyt/yarp-swagger/actions/workflows/release.yml/badge.svg)
-[![nuget](https://img.shields.io/nuget/v/Treyt.Yarp.ReverseProxy.Swagger)](https://www.nuget.org/packages/Treyt.Yarp.ReverseProxy.Swagger/)
+[![nuget](https://img.shields.io/nuget/v/Treyt.Yarp.ReverseProxy.Swagger?logo=nuget)](https://www.nuget.org/packages/Treyt.Yarp.ReverseProxy.Swagger/)
 
 ## Introduction
 
@@ -95,4 +95,4 @@ app.UseSwaggerUI(options =>
 
 After run you will get generated Swagger files by clusters:
 
-![](README.png)
+![image](https://raw.githubusercontent.com/andreytreyt/yarp-swagger/main/README.png)

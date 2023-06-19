@@ -2,19 +2,20 @@ using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Yarp.ReverseProxy.Swagger.Extensions;
-
-public static class ReverseProxyBuilderExtensions
+namespace Yarp.ReverseProxy.Swagger.Extensions
 {
-    public static IReverseProxyBuilder AddSwagger(
-        this IReverseProxyBuilder builder,
-        IConfigurationSection configurationSection)
+    public static class ReverseProxyBuilderExtensions
     {
-        if (configurationSection == null)
-            throw new ArgumentNullException(nameof (configurationSection));
-        
-        builder.Services.AddSingleton(_ => configurationSection.Get<ReverseProxyDocumentFilterConfig>());
-        
-        return builder;
+        public static IReverseProxyBuilder AddSwagger(
+            this IReverseProxyBuilder builder,
+            IConfigurationSection configurationSection)
+        {
+            if (configurationSection == null)
+                throw new ArgumentNullException(nameof(configurationSection));
+
+            builder.Services.AddSingleton(_ => configurationSection.Get<ReverseProxyDocumentFilterConfig>());
+
+            return builder;
+        }
     }
 }
