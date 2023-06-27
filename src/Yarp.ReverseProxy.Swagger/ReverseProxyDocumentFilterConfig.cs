@@ -7,24 +7,24 @@ namespace Yarp.ReverseProxy.Swagger
     {
         public IReadOnlyDictionary<string, Cluster> Clusters { get; init; }
 
-        public class Cluster
+        public sealed class Cluster
         {
             public IReadOnlyDictionary<string, Destination> Destinations { get; init; }
 
-            public class Destination
+            public sealed class Destination
             {
+                public string AccessTokenClientName { get; init; }
                 public string Address { get; init; }
                 public IReadOnlyList<Swagger> Swaggers { get; init; }
 
-                public class Swagger
+                public sealed class Swagger
                 {
                     public string PrefixPath { get; init; }
                     public IReadOnlyList<string> Paths { get; init; }
                 }
             }
         }
-
-        public static ReverseProxyDocumentFilterConfig Empty => new();
+        
         public bool IsEmpty => Clusters?.Any() != true;
     }
 }

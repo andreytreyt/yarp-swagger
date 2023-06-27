@@ -1,3 +1,4 @@
+using App2.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace App2.Controllers;
