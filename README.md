@@ -36,7 +36,7 @@ Update appsettings.json:
 }
 ```
 
-Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/ConfigureSwaggerOptions.cs):
+Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/Configs/ConfigureSwaggerOptions.cs):
 
 ```csharp
 public void Configure(SwaggerGenOptions options)
@@ -53,7 +53,7 @@ public void Configure(SwaggerGenOptions options)
         filterDescriptors.Add(new FilterDescriptor
         {
             Type = typeof(ReverseProxyDocumentFilter),
-            Arguments = new object[]{ reverseProxyDocumentFilterConfig }
+            Arguments = Array.Empty<object>()
         });
     }
 
@@ -67,7 +67,7 @@ Update Program.cs:
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.DocumentFilter<ReverseProxyDocumentFilter>(ReverseProxyDocumentFilterConfig.Empty);
+    options.DocumentFilter<ReverseProxyDocumentFilter>();
 });
 ```
 
@@ -93,3 +93,49 @@ app.UseSwaggerUI(options =>
 After run you will get generated Swagger files by clusters:
 
 ![image](https://raw.githubusercontent.com/andreytreyt/yarp-swagger/main/README.png)
+
+## Authentication and Authorization
+
+Update appsettings.json:
+
+```json lines
+{
+  "ReverseProxy": {
+    "Clusters": {
+      "App1Cluster": {
+        "Destinations": {
+          "Default": {
+            "Address": "https://localhost:5101",
+            "AccessTokenClientName": "Identity", // <-- this line,
+            "Swaggers": [
+              {
+                "PrefixPath": "/proxy-app1",
+                "Paths": [
+                  "/swagger/v1/swagger.json"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Update Program.cs:
+
+```csharp
+builder.Services.AddAccessTokenManagement(options =>
+{
+    var identityConfig = builder.Configuration.GetSection("Identity").Get<IdentityConfig>()!;
+    
+    options.Client.Clients.Add("Identity", new ClientCredentialsTokenRequest
+    {
+        Address = $"{identityConfig.Url}/connect/token",
+        ClientId = identityConfig.ClientId,
+        ClientSecret = identityConfig.ClientSecret
+    });
+});
+```
+

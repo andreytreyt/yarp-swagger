@@ -3,7 +3,7 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Yarp.ReverseProxy.Swagger;
 
-namespace Yarp;
+namespace Yarp.Configs;
 
 public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
 {
@@ -28,7 +28,7 @@ public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
             filterDescriptors.Add(new FilterDescriptor
             {
                 Type = typeof(ReverseProxyDocumentFilter),
-                Arguments = new object[]{ reverseProxyDocumentFilterConfig }
+                Arguments = Array.Empty<object>()
             });
         }
 

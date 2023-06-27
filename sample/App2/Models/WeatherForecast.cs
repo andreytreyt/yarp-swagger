@@ -1,4 +1,4 @@
-namespace App2;
+namespace App2.Models;
 
 public class WeatherForecast
 {

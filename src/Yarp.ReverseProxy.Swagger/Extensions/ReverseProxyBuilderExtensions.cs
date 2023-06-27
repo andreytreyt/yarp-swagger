@@ -13,7 +13,22 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             if (configurationSection == null)
                 throw new ArgumentNullException(nameof(configurationSection));
 
-            builder.Services.AddSingleton(_ => configurationSection.Get<ReverseProxyDocumentFilterConfig>());
+            var reverseProxyDocumentFilterConfig = configurationSection.Get<ReverseProxyDocumentFilterConfig>();
+            
+            builder.Services.AddSingleton(_ => reverseProxyDocumentFilterConfig);
+
+            foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
+            {
+                foreach (var destination in cluster.Value.Destinations)
+                {
+                    var httpClientBuilder = builder.Services.AddHttpClient($"{cluster.Key}_{destination.Key}");
+
+                    if (false == string.IsNullOrWhiteSpace(destination.Value.AccessTokenClientName))
+                    {
+                        httpClientBuilder.AddClientAccessTokenHandler(destination.Value.AccessTokenClientName);
+                    }
+                }
+            }
 
             return builder;
         }

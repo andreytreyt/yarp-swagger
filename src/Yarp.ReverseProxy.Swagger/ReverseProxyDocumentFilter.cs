@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.OpenApi.Models;
@@ -9,11 +10,15 @@ namespace Yarp.ReverseProxy.Swagger
 {
     public sealed class ReverseProxyDocumentFilter : IDocumentFilter
     {
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ReverseProxyDocumentFilterConfig _config;
 
-        public ReverseProxyDocumentFilter(ReverseProxyDocumentFilterConfig config)
+        public ReverseProxyDocumentFilter(
+            IHttpClientFactory httpClientFactory,
+            ReverseProxyDocumentFilterConfig config)
         {
             _config = config;
+            _httpClientFactory = httpClientFactory;
         }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -27,8 +32,7 @@ namespace Yarp.ReverseProxy.Swagger
 
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
-
-            using var httpClient = new HttpClient();
+            var securityRequirements = new List<OpenApiSecurityRequirement>();
 
             foreach (var destination in cluster.Destinations)
             {
@@ -37,13 +41,15 @@ namespace Yarp.ReverseProxy.Swagger
                     continue;
                 }
 
+                var httpClient = _httpClientFactory.CreateClient($"{context.DocumentName}_{destination.Key}");
+
                 foreach (var swagger in destination.Value.Swaggers)
                 {
                     if (swagger.Paths?.Any() != true)
                     {
                         continue;
                     }
-
+                    
                     foreach (var swaggerPath in swagger.Paths)
                     {
                         var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
@@ -58,11 +64,13 @@ namespace Yarp.ReverseProxy.Swagger
                         }
 
                         components.Add(doc.Components);
+                        securityRequirements.AddRange(doc.SecurityRequirements);
                     }
                 }
             }
 
             swaggerDoc.Paths = paths;
+            swaggerDoc.SecurityRequirements = securityRequirements;
             swaggerDoc.Components = components;
         }
     }
