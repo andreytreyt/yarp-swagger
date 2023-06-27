@@ -106,7 +106,7 @@ Update appsettings.json:
         "Destinations": {
           "Default": {
             "Address": "https://localhost:5101",
-            "AccessTokenClientName": "Identity", // <-- this line,
+            "AccessTokenClientName": "Identity", // <-- this line
             "Swaggers": [
               {
                 "PrefixPath": "/proxy-app1",
