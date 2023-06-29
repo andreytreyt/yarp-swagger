@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -11,14 +12,18 @@ namespace Yarp.ReverseProxy.Swagger
     public sealed class ReverseProxyDocumentFilter : IDocumentFilter
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ReverseProxyDocumentFilterConfig _config;
+        private ReverseProxyDocumentFilterConfig _config;
 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
-            ReverseProxyDocumentFilterConfig config)
+            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions)
         {
-            _config = config;
+            _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
+            
+            configOptions.OnChange(config => {
+                _config = config;
+            });
         }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)

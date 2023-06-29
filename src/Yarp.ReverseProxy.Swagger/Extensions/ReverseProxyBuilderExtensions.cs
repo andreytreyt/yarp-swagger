@@ -13,11 +13,11 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             if (configurationSection == null)
                 throw new ArgumentNullException(nameof(configurationSection));
 
-            var reverseProxyDocumentFilterConfig = configurationSection.Get<ReverseProxyDocumentFilterConfig>();
+            builder.Services.Configure<ReverseProxyDocumentFilterConfig>(configurationSection);
             
-            builder.Services.AddSingleton(_ => reverseProxyDocumentFilterConfig);
+            var config = configurationSection.Get<ReverseProxyDocumentFilterConfig>();
 
-            foreach (var cluster in reverseProxyDocumentFilterConfig.Clusters)
+            foreach (var cluster in config.Clusters)
             {
                 foreach (var destination in cluster.Value.Destinations)
                 {

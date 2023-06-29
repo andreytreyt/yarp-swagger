@@ -41,9 +41,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        var reverseProxyDocumentFilterConfigs = app.Services.GetServices<ReverseProxyDocumentFilterConfig>();
-        foreach (var cluster in reverseProxyDocumentFilterConfigs
-                     .SelectMany(x => x.Clusters))
+        var config = app.Services.GetRequiredService<IOptionsMonitor<ReverseProxyDocumentFilterConfig>>().CurrentValue;
+        foreach (var cluster in config.Clusters)
         {
             options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
         }
