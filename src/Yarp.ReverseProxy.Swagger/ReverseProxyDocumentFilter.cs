@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
@@ -30,18 +31,17 @@ namespace Yarp.ReverseProxy.Swagger
         {
             if (_config.IsEmpty
                 || false == _config.Clusters.TryGetValue(context.DocumentName, out var cluster)
-                || cluster.Destinations?.Any() != true)
+                || true != cluster.Destinations?.Any())
             {
                 return;
             }
-
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
 
             foreach (var destination in cluster.Destinations)
             {
-                if (destination.Value.Swaggers?.Any() != true)
+                if (true != destination.Value.Swaggers?.Any())
                 {
                     continue;
                 }
@@ -54,6 +54,12 @@ namespace Yarp.ReverseProxy.Swagger
                     {
                         continue;
                     }
+
+                    Regex filterRegex = null;
+                    if (false == string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
+                    {
+                        filterRegex = new Regex(swagger.PathFilterRegexPattern);
+                    }
                     
                     foreach (var swaggerPath in swagger.Paths)
                     {
@@ -64,6 +70,12 @@ namespace Yarp.ReverseProxy.Swagger
                         {
                             var key = path.Key;
                             var value = path.Value;
+
+                            if (filterRegex != null
+                                && false == filterRegex.IsMatch(key))
+                            {
+                                continue;
+                            }
 
                             paths.Add($"{swagger.PrefixPath}{key}", value);
                         }
