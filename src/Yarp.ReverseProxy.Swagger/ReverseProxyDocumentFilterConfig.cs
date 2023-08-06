@@ -20,6 +20,7 @@ namespace Yarp.ReverseProxy.Swagger
                 public sealed class Swagger
                 {
                     public string PrefixPath { get; init; }
+                    public string PathFilterRegexPattern { get; init; }
                     public IReadOnlyList<string> Paths { get; init; }
                 }
             }

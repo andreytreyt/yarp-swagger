@@ -137,6 +137,35 @@ builder.Services.AddAccessTokenManagement(options =>
 });
 ```
 
+## Filtering of Paths
+
+Update appsettings.json:
+
+```json lines
+{
+  "ReverseProxy": {
+    "Clusters": {
+      "App1Cluster": {
+        "Destinations": {
+          "Default": {
+            "Address": "https://localhost:5101",
+            "Swaggers": [
+              {
+                "PrefixPath": "/proxy-app1",
+                "PathFilterRegexPattern": ".*", // <-- this line
+                "Paths": [
+                  "/swagger/v1/swagger.json"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 # Contributing
 
 This project welcomes contributions and suggestions through issues and pull requests.
