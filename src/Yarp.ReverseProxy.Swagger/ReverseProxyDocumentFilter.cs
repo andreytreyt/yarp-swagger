@@ -59,7 +59,7 @@ namespace Yarp.ReverseProxy.Swagger
                     }
 
                     Dictionary<string, List<string>> publishedRoutes = null;
-                    if (swagger.AddOnlyPublishedPaths)
+                    if (true)
                     {
                         publishedRoutes = GetPublishedPaths(_configuration);
                     }
@@ -88,9 +88,14 @@ namespace Yarp.ReverseProxy.Swagger
 
                             if (publishedRoutes != null)
                             {
-                                if (!CheckSwaggerDefinitionIsValid(swagger, publishedRoutes, path))
+                                var operations = CheckSwaggerDefinitionIsValid(swagger, publishedRoutes, path);
+                                var operationKeys = path.Value.Operations.Keys.ToList();
+                                foreach (var operationKey in operationKeys)
                                 {
-                                    continue;
+                                    if (!operations.Contains(operationKey))
+                                    {
+                                        path.Value.Operations.Remove(operationKey);
+                                    }
                                 }
                             }
 
@@ -139,16 +144,40 @@ namespace Yarp.ReverseProxy.Swagger
             return validRoutes;
         }
 
-        private static bool CheckSwaggerDefinitionIsValid(ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger swagger, IReadOnlyDictionary<string, List<string>> publishedPaths, KeyValuePair<string, OpenApiPathItem> path)
+        private static List<OperationType> CheckSwaggerDefinitionIsValid(ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger swagger, IReadOnlyDictionary<string, List<string>> publishedPaths, KeyValuePair<string, OpenApiPathItem> path)
         {
             var pathKey = $"{swagger.PrefixPath}{path.Key}";
             if (!publishedPaths.TryGetValue(pathKey, out var methods))
             {
-                return false;
+                return new List<OperationType>();
             }
 
-            var pathMethods = path.Value.Operations.Select(q => q.Key.ToString().ToUpperInvariant()).ToList();
-            return methods.All(method => pathMethods.Contains(method.ToUpperInvariant()));
+            var operations = methods.Select(q =>
+            {
+                switch (q)
+                {
+                    case "GET":
+                        return OperationType.Get;
+                    case "POST":
+                        return OperationType.Post;
+                    case "PUT":
+                        return OperationType.Put;
+                    case "DELETE":
+                        return OperationType.Delete;
+                    case "PATCH":
+                        return OperationType.Patch;
+                    case "HEAD":
+                        return OperationType.Head;
+                    case "OPTIONS":
+                        return OperationType.Options;
+                    case "TRACE":
+                        return OperationType.Trace;
+                    default:
+                        return OperationType.Get;
+                }
+            }).ToList();
+
+            return operations;
         }
     }
 }
