@@ -148,7 +148,7 @@ namespace Yarp.ReverseProxy.Swagger
             }
 
             var pathMethods = path.Value.Operations.Select(q => q.Key.ToString().ToUpperInvariant()).ToList();
-            return pathMethods.Count == methods.Count && methods.All(method => pathMethods.Contains(method.ToUpperInvariant()));
+            return methods.All(method => pathMethods.Contains(method.ToUpperInvariant()));
         }
     }
 }
