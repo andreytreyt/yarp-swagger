@@ -166,6 +166,36 @@ Update appsettings.json:
 }
 ```
 
+## Filtering of Published Paths
+
+If you want to publish only some configured path in YARP, you can use the `AddOnlyPublishedPaths` option.
+Update appsettings.json:
+
+```json lines
+{
+  "ReverseProxy": {
+    "Clusters": {
+      "App1Cluster": {
+        "Destinations": {
+          "Default": {
+            "Address": "https://localhost:5101",
+            "Swaggers": [
+              {
+                "PrefixPath": "/proxy-app1",
+                "AddOnlyPublishedPaths": true, // <-- this line
+                "Paths": [
+                  "/swagger/v1/swagger.json"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 # Contributing
 
 This project welcomes contributions and suggestions through issues and pull requests.
