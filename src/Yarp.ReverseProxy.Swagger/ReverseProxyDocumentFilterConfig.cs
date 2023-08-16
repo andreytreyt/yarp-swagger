@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using Yarp.ReverseProxy.Configuration;
 
 namespace Yarp.ReverseProxy.Swagger
 {
     public sealed class ReverseProxyDocumentFilterConfig
     {
+        public IReadOnlyDictionary<string, RouteConfig> Routes {get; init; } 
         public IReadOnlyDictionary<string, Cluster> Clusters { get; init; }
 
         public sealed class Cluster

@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
@@ -16,18 +14,26 @@ namespace Yarp.ReverseProxy.Swagger
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private ReverseProxyDocumentFilterConfig _config;
-        private readonly IConfiguration _configuration;
+        private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
 
-        private const int MAX_ALLOWED_HTTP_METHODS = 8; 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
-            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions,
-            IConfiguration configuration)
+            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions)
         {
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
             configOptions.OnChange(config => { _config = config; });
+            _operationTypeMapping = new Dictionary<string, OperationType>
+            {
+                {"GET", OperationType.Get},
+                {"POST", OperationType.Post},
+                {"PUT", OperationType.Put},
+                {"DELETE", OperationType.Delete},
+                {"PATCH", OperationType.Patch},
+                {"HEAD", OperationType.Head},
+                {"OPTIONS", OperationType.Options},
+                {"TRACE", OperationType.Trace},
+            };
         }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -59,10 +65,10 @@ namespace Yarp.ReverseProxy.Swagger
                         continue;
                     }
 
-                    IReadOnlyDictionary<string, List<string>> publishedRoutes = null;
+                    IReadOnlyDictionary<string, IEnumerable<string>> publishedRoutes = null;
                     if (swagger.AddOnlyPublishedPaths)
                     {
-                        publishedRoutes = GetPublishedPaths(_configuration);
+                        publishedRoutes = GetPublishedPaths(_config);
                     }
 
                     Regex filterRegex = null;
@@ -89,7 +95,14 @@ namespace Yarp.ReverseProxy.Swagger
 
                             if (publishedRoutes != null)
                             {
-                                var operations = CheckSwaggerDefinitionIsValid(swagger, publishedRoutes, path);
+                                var pathKey = $"{swagger.PrefixPath}{path.Key}";
+                                if (!publishedRoutes.ContainsKey(pathKey))
+                                {
+                                    continue;
+                                }
+
+                                var methods = publishedRoutes[pathKey];
+                                var operations = _operationTypeMapping.Where(q => methods.Contains(q.Key)).Select(q => q.Value);
                                 var operationKeys = path.Value.Operations.Keys.ToList();
                                 foreach (var operationKey in operationKeys)
                                 {
@@ -114,71 +127,27 @@ namespace Yarp.ReverseProxy.Swagger
             swaggerDoc.Components = components;
         }
 
-        private static IReadOnlyDictionary<string, List<string>> GetPublishedPaths(IConfiguration configuration)
+        private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(ReverseProxyDocumentFilterConfig config)
         {
-            var validRoutes = new Dictionary<string, List<string>>();
-            var allConfigs = configuration.AsEnumerable().ToImmutableDictionary();
-            var allPaths = allConfigs.Where(q => q.Key.EndsWith("Match:Path"));
-            foreach (var (key, routeValue) in allPaths)
+            var validRoutes = new Dictionary<string, IEnumerable<string>>();
+            foreach (var route in config.Routes)
             {
-                var methods = new List<string>();
-                for (var i = 0; i < MAX_ALLOWED_HTTP_METHODS; i++)
+                if (route.Value?.Match.Path == null)
                 {
-                    var methodKey = key.Replace("Match:Path", $"Match:Methods:{i}");
-                    if (!allConfigs.TryGetValue(methodKey, out var config))
-                        continue;
-
-                    if (config != null)
-                        methods.Add(config);
+                    continue;
                 }
 
-                if (!validRoutes.ContainsKey(routeValue))
+                if (!validRoutes.ContainsKey(route.Value.Match.Path))
                 {
-                    validRoutes.Add(routeValue, methods);
+                    validRoutes.Add(route.Value.Match.Path, route.Value.Match.Methods);
                 }
                 else
                 {
-                    validRoutes[routeValue].AddRange(methods);
+                    validRoutes[route.Value.Match.Path] = validRoutes[route.Value.Match.Path].Concat(route.Value.Match.Methods);
                 }
             }
 
             return validRoutes;
-        }
-
-        private static IReadOnlyList<OperationType> CheckSwaggerDefinitionIsValid(ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger swagger, IReadOnlyDictionary<string, List<string>> publishedPaths, KeyValuePair<string, OpenApiPathItem> path)
-        {
-            var pathKey = $"{swagger.PrefixPath}{path.Key}";
-            if (!publishedPaths.TryGetValue(pathKey, out var methods))
-            {
-                return new List<OperationType>();
-            }
-
-            var operations = methods.Select(q =>
-            {
-                switch (q)
-                {
-                    case "GET":
-                        return OperationType.Get;
-                    case "POST":
-                        return OperationType.Post;
-                    case "PUT":
-                        return OperationType.Put;
-                    case "DELETE":
-                        return OperationType.Delete;
-                    case "PATCH":
-                        return OperationType.Patch;
-                    case "HEAD":
-                        return OperationType.Head;
-                    case "OPTIONS":
-                        return OperationType.Options;
-                    case "TRACE":
-                        return OperationType.Trace;
-                    default:
-                        return OperationType.Get;
-                }
-            }).ToList();
-
-            return operations;
         }
     }
 }
