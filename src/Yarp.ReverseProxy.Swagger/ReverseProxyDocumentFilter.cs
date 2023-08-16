@@ -58,7 +58,7 @@ namespace Yarp.ReverseProxy.Swagger
                         continue;
                     }
 
-                    Dictionary<string, List<string>> publishedRoutes = null;
+                    IReadOnlyDictionary<string, List<string>> publishedRoutes = null;
                     if (swagger.AddOnlyPublishedPaths)
                     {
                         publishedRoutes = GetPublishedPaths(_configuration);
@@ -113,7 +113,7 @@ namespace Yarp.ReverseProxy.Swagger
             swaggerDoc.Components = components;
         }
 
-        private static Dictionary<string, List<string>> GetPublishedPaths(IConfiguration configuration)
+        private static IReadOnlyDictionary<string, List<string>> GetPublishedPaths(IConfiguration configuration)
         {
             var validRoutes = new Dictionary<string, List<string>>();
             var allConfigs = configuration.AsEnumerable().ToImmutableDictionary();
@@ -144,7 +144,7 @@ namespace Yarp.ReverseProxy.Swagger
             return validRoutes;
         }
 
-        private static List<OperationType> CheckSwaggerDefinitionIsValid(ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger swagger, IReadOnlyDictionary<string, List<string>> publishedPaths, KeyValuePair<string, OpenApiPathItem> path)
+        private static IReadOnlyList<OperationType> CheckSwaggerDefinitionIsValid(ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger swagger, IReadOnlyDictionary<string, List<string>> publishedPaths, KeyValuePair<string, OpenApiPathItem> path)
         {
             var pathKey = $"{swagger.PrefixPath}{path.Key}";
             if (!publishedPaths.TryGetValue(pathKey, out var methods))
