@@ -18,6 +18,7 @@ namespace Yarp.ReverseProxy.Swagger
         private ReverseProxyDocumentFilterConfig _config;
         private readonly IConfiguration _configuration;
 
+        private const int MAX_ALLOWED_HTTP_METHODS = 8; 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
             IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions,
@@ -121,7 +122,7 @@ namespace Yarp.ReverseProxy.Swagger
             foreach (var (key, routeValue) in allPaths)
             {
                 var methods = new List<string>();
-                for (var i = 0; i < 10; i++)
+                for (var i = 0; i < MAX_ALLOWED_HTTP_METHODS; i++)
                 {
                     var methodKey = key.Replace("Match:Path", $"Match:Methods:{i}");
                     if (!allConfigs.TryGetValue(methodKey, out var config))
