@@ -14,6 +14,7 @@ namespace Yarp.ReverseProxy.Swagger
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private ReverseProxyDocumentFilterConfig _config;
+        private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
@@ -21,10 +22,18 @@ namespace Yarp.ReverseProxy.Swagger
         {
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
-            
-            configOptions.OnChange(config => {
-                _config = config;
-            });
+            configOptions.OnChange(config => { _config = config; });
+            _operationTypeMapping = new Dictionary<string, OperationType>
+            {
+                {"GET", OperationType.Get},
+                {"POST", OperationType.Post},
+                {"PUT", OperationType.Put},
+                {"DELETE", OperationType.Delete},
+                {"PATCH", OperationType.Patch},
+                {"HEAD", OperationType.Head},
+                {"OPTIONS", OperationType.Options},
+                {"TRACE", OperationType.Trace},
+            };
         }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -35,6 +44,7 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 return;
             }
+
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
@@ -55,12 +65,18 @@ namespace Yarp.ReverseProxy.Swagger
                         continue;
                     }
 
+                    IReadOnlyDictionary<string, IEnumerable<string>> publishedRoutes = null;
+                    if (swagger.AddOnlyPublishedPaths)
+                    {
+                        publishedRoutes = GetPublishedPaths(_config);
+                    }
+
                     Regex filterRegex = null;
                     if (false == string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
                     {
                         filterRegex = new Regex(swagger.PathFilterRegexPattern);
                     }
-                    
+
                     foreach (var swaggerPath in swagger.Paths)
                     {
                         var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
@@ -77,6 +93,26 @@ namespace Yarp.ReverseProxy.Swagger
                                 continue;
                             }
 
+                            if (publishedRoutes != null)
+                            {
+                                var pathKey = $"{swagger.PrefixPath}{path.Key}";
+                                if (!publishedRoutes.ContainsKey(pathKey))
+                                {
+                                    continue;
+                                }
+
+                                var methods = publishedRoutes[pathKey];
+                                var operations = _operationTypeMapping.Where(q => methods.Contains(q.Key)).Select(q => q.Value);
+                                var operationKeys = path.Value.Operations.Keys.ToList();
+                                foreach (var operationKey in operationKeys)
+                                {
+                                    if (!operations.Contains(operationKey))
+                                    {
+                                        path.Value.Operations.Remove(operationKey);
+                                    }
+                                }
+                            }
+
                             paths.Add($"{swagger.PrefixPath}{key}", value);
                         }
 
@@ -89,6 +125,29 @@ namespace Yarp.ReverseProxy.Swagger
             swaggerDoc.Paths = paths;
             swaggerDoc.SecurityRequirements = securityRequirements;
             swaggerDoc.Components = components;
+        }
+
+        private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(ReverseProxyDocumentFilterConfig config)
+        {
+            var validRoutes = new Dictionary<string, IEnumerable<string>>();
+            foreach (var route in config.Routes)
+            {
+                if (route.Value?.Match.Path == null)
+                {
+                    continue;
+                }
+
+                if (!validRoutes.ContainsKey(route.Value.Match.Path))
+                {
+                    validRoutes.Add(route.Value.Match.Path, route.Value.Match.Methods);
+                }
+                else
+                {
+                    validRoutes[route.Value.Match.Path] = validRoutes[route.Value.Match.Path].Concat(route.Value.Match.Methods);
+                }
+            }
+
+            return validRoutes;
         }
     }
 }
