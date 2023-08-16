@@ -59,7 +59,7 @@ namespace Yarp.ReverseProxy.Swagger
                     }
 
                     Dictionary<string, List<string>> publishedRoutes = null;
-                    if (true)
+                    if (swagger.AddOnlyPublishedPaths)
                     {
                         publishedRoutes = GetPublishedPaths(_configuration);
                     }
