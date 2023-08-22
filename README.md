@@ -169,6 +169,7 @@ Update appsettings.json:
 ## Filtering of Published Paths
 
 If you want to publish only some configured path in YARP, you can use the `AddOnlyPublishedPaths` option.
+(For using these options, you need to add Methods configuration in the Match block of the YARP configuration.)
 Update appsettings.json:
 
 ```json lines
