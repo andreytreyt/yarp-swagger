@@ -11,15 +11,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.DocumentFilter<ReverseProxyDocumentFilter>();
-});
+builder.Services.AddSwaggerGen(options => { options.DocumentFilter<ReverseProxyDocumentFilter>(); });
 
 builder.Services.AddAccessTokenManagement(options =>
 {
     var identityConfig = builder.Configuration.GetSection("Identity").Get<IdentityConfig>()!;
-    
+
     options.Client.Clients.Add("Identity", new ClientCredentialsTokenRequest
     {
         Address = $"{identityConfig.Url}/connect/token",
@@ -29,10 +26,13 @@ builder.Services.AddAccessTokenManagement(options =>
 });
 
 var configuration = builder.Configuration.GetSection("ReverseProxy");
+var configurationForOnlyPublishedRoutes = builder.Configuration.GetSection("ReverseProxyOnlyPublishedRoutes");
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(configuration)
-    .AddSwagger(configuration);
+    .LoadFromConfig(configurationForOnlyPublishedRoutes)
+    .AddSwagger(configuration)
+    .AddSwagger(configurationForOnlyPublishedRoutes);
 
 var app = builder.Build();
 
