@@ -29,10 +29,13 @@ builder.Services.AddAccessTokenManagement(options =>
 });
 
 var configuration = builder.Configuration.GetSection("ReverseProxy");
+var configurationForOnlyPublishedRoutes = builder.Configuration.GetSection("ReverseProxyOnlyPublishedRoutes");
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(configuration)
-    .AddSwagger(configuration);
+    .LoadFromConfig(configurationForOnlyPublishedRoutes)
+    .AddSwagger(configuration)
+    .AddSwagger(configurationForOnlyPublishedRoutes);
 
 var app = builder.Build();
 
