@@ -102,18 +102,22 @@ namespace Yarp.ReverseProxy.Swagger
                                 }
 
                                 var methods = publishedRoutes[pathKey];
-                                var operations = _operationTypeMapping.Where(q => methods.Contains(q.Key)).Select(q => q.Value);
+                                var operations = _operationTypeMapping
+                                    .Where(q => methods.Contains(q.Key))
+                                    .Select(q => q.Value)
+                                    .ToList();
                                 var operationKeys = path.Value.Operations.Keys.ToList();
+                                
                                 foreach (var operationKey in operationKeys)
                                 {
-                                    if (!operations.Contains(operationKey))
+                                    if (false == operations.Contains(operationKey))
                                     {
                                         path.Value.Operations.Remove(operationKey);
                                     }
                                 }
                             }
 
-                            paths.Add($"{swagger.PrefixPath}{key}", value);
+                            paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                         }
 
                         components.Add(doc.Components);
@@ -137,13 +141,15 @@ namespace Yarp.ReverseProxy.Swagger
                     continue;
                 }
 
-                if (!validRoutes.ContainsKey(route.Value.Match.Path))
+                if (false == validRoutes.ContainsKey(route.Value.Match.Path))
                 {
-                    validRoutes.Add(route.Value.Match.Path, route.Value.Match.Methods);
+                    validRoutes.TryAdd(route.Value.Match.Path, route.Value.Match.Methods);
                 }
                 else
                 {
-                    validRoutes[route.Value.Match.Path] = validRoutes[route.Value.Match.Path].Concat(route.Value.Match.Methods);
+                    if (route.Value.Match.Methods != null)
+                        validRoutes[route.Value.Match.Path] =
+                            validRoutes[route.Value.Match.Path].Concat(route.Value.Match.Methods);
                 }
             }
 

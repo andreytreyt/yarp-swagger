@@ -24,8 +24,7 @@ namespace Yarp.ReverseProxy.Swagger
                     public string PrefixPath { get; init; }
                     public string PathFilterRegexPattern { get; init; }
                     public IReadOnlyList<string> Paths { get; init; }
-
-                    public bool AddOnlyPublishedPaths { get; set; } = false;
+                    public bool AddOnlyPublishedPaths { get; init; } = false;
                 }
             }
         }
