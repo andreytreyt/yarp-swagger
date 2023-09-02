@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you have discovered a vulnerability in this project or have information about a guaranteed security risk, please contact us.
+If you have discovered a vulnerability in this project or have information about a guaranteed security risk, please contact us at andreytreyt@hotmail.com.
 
 ## Updating
 
