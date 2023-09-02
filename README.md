@@ -3,11 +3,7 @@
 [![nuget_v](https://img.shields.io/nuget/v/Treyt.Yarp.ReverseProxy.Swagger?logo=nuget)](https://www.nuget.org/packages/Treyt.Yarp.ReverseProxy.Swagger/)
 ![nuget_dt](https://img.shields.io/nuget/dt/Treyt.Yarp.ReverseProxy.Swagger?logo=nuget)
 
-## Introduction
-
-It's an easy to use Swagger extension for [the YARP project](https://github.com/microsoft/reverse-proxy).
-
-## Getting Started
+# Getting Started
 
 Configure [Swagger](https://learn.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-swashbuckle) and [YARP](https://microsoft.github.io/reverse-proxy/articles/getting-started.html) for your project.
 
@@ -92,7 +88,7 @@ After run you will get generated Swagger files by clusters:
 
 ![image](https://raw.githubusercontent.com/andreytreyt/yarp-swagger/main/README.png)
 
-## Authentication and Authorization
+# Authentication and Authorization
 
 Update appsettings.json:
 
@@ -137,7 +133,7 @@ builder.Services.AddAccessTokenManagement(options =>
 });
 ```
 
-## Filtering of Paths
+# Filtering of Paths
 
 Update appsettings.json:
 
@@ -166,7 +162,7 @@ Update appsettings.json:
 }
 ```
 
-## Filtering of Published Paths
+# Filtering of Published Paths
 
 If you want to publish only some configured path in YARP, you can use the `AddOnlyPublishedPaths` option.
 (For using these options, you need to add Methods configuration in the Match block of the YARP configuration.)
