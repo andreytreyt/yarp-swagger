@@ -17,6 +17,33 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             
             var config = configurationSection.Get<ReverseProxyDocumentFilterConfig>();
 
+            ConfigureHttpClient(builder, config);
+
+            return builder;
+        }
+        
+        public static IReverseProxyBuilder AddSwagger(
+            this IReverseProxyBuilder builder,
+            ReverseProxyDocumentFilterConfig config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            builder.Services.Configure<ReverseProxyDocumentFilterConfig>(overriddenConfig =>
+            {
+                overriddenConfig.Routes = config.Routes;
+                overriddenConfig.Clusters = config.Clusters;
+            });
+
+            ConfigureHttpClient(builder, config);
+
+            return builder;
+        }
+
+        private static void ConfigureHttpClient(
+            IReverseProxyBuilder builder,
+            ReverseProxyDocumentFilterConfig config)
+        {
             foreach (var cluster in config.Clusters)
             {
                 foreach (var destination in cluster.Value.Destinations)
@@ -29,8 +56,6 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
                     }
                 }
             }
-
-            return builder;
         }
     }
 }

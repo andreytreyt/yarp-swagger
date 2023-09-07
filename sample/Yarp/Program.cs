@@ -1,7 +1,6 @@
 using IdentityModel.Client;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Yarp;
 using Yarp.Configs;
 using Yarp.ReverseProxy.Swagger;
 using Yarp.ReverseProxy.Swagger.Extensions;
