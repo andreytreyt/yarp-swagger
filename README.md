@@ -7,6 +7,8 @@
 
 Configure [Swagger](https://learn.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-swashbuckle) and [YARP](https://microsoft.github.io/reverse-proxy/articles/getting-started.html) for your project.
 
+### From Configuration
+
 Update appsettings.json:
 
 ```json lines
@@ -32,6 +34,104 @@ Update appsettings.json:
   }
 }
 ```
+
+Update Program.cs:
+
+```csharp
+var configuration = builder.Configuration.GetSection("ReverseProxy");
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(configuration)
+    .AddSwagger(configuration); // <-- this line
+```
+
+### From Code
+
+Update Program.cs:
+
+```csharp
+RouteConfig[] GetRoutes()
+{
+    return new[]
+    {
+        new RouteConfig
+        {
+            RouteId = "App1Route",
+            ClusterId = "App1Cluster",
+            Match = new RouteMatch
+            {
+                Path = "/proxy-app1/{**catch-all}"
+            },
+            Transforms = new[]
+            {
+                new Dictionary<string, string>
+                {
+                    {"PathPattern", "{**catch-all}"}
+                }
+            }
+        }
+    };
+}
+
+ClusterConfig[] GetClusters()
+{
+    return new[]
+    {
+        new ClusterConfig
+        {
+            ClusterId = "App1Cluster",
+            Destinations = new Dictionary<string, DestinationConfig>
+            {
+                {
+                    "Default", new DestinationConfig
+                    {
+                        Address = "https://localhost:5101"
+                    }
+                }
+            }
+        }
+    };
+}
+
+ReverseProxyDocumentFilterConfig GetSwaggerConfig()
+{
+    return new ReverseProxyDocumentFilterConfig
+    {
+        Clusters = new Dictionary<string, ReverseProxyDocumentFilterConfig.Cluster>
+        {
+            {
+                "App1Cluster", new ReverseProxyDocumentFilterConfig.Cluster
+                {
+                    Destinations = new Dictionary<string, ReverseProxyDocumentFilterConfig.Cluster.Destination>
+                    {
+                        {
+                            "Default", new ReverseProxyDocumentFilterConfig.Cluster.Destination
+                            {
+                                Address = "https://localhost:5101",
+                                Swaggers = new[]
+                                {
+                                    new ReverseProxyDocumentFilterConfig.Cluster.Destination.Swagger
+                                    {
+                                        PrefixPath = "/proxy-app1",
+                                        Paths = new[] {"/swagger/v1/swagger.json"}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+}
+
+builder.Services
+    .AddReverseProxy()
+    .LoadFromMemory(GetRoutes(), GetClusters())
+    .AddSwagger(GetSwaggerConfig()); // <-- this line
+```
+
+### Common
 
 Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/Configs/ConfigureSwaggerOptions.cs):
 
@@ -63,14 +163,6 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.DocumentFilter<ReverseProxyDocumentFilter>();
 });
-```
-
-```csharp
-var configuration = builder.Configuration.GetSection("ReverseProxy");
-builder.Services
-    .AddReverseProxy()
-    .LoadFromConfig(configuration)
-    .AddSwagger(configuration); // <-- this line
 ```
 
 ```csharp
@@ -135,6 +227,8 @@ builder.Services.AddAccessTokenManagement(options =>
 
 # Filtering of Paths
 
+### By Regex Pattern
+
 Update appsettings.json:
 
 ```json lines
@@ -162,7 +256,7 @@ Update appsettings.json:
 }
 ```
 
-# Filtering of Published Paths
+### By Only Published Paths
 
 If you want to publish only some configured path in YARP, you can use the `AddOnlyPublishedPaths` option.
 (For using these options, you need to add Methods configuration in the Match block of the YARP configuration.)
