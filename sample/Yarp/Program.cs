@@ -10,10 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.DocumentFilter<ReverseProxyDocumentFilter>();
-});
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddAccessTokenManagement(options =>
 {
