@@ -159,10 +159,7 @@ Update Program.cs:
 
 ```csharp
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.DocumentFilter<ReverseProxyDocumentFilter>();
-});
+builder.Services.AddSwaggerGen();
 ```
 
 ```csharp
