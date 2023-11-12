@@ -82,6 +82,11 @@ namespace Yarp.ReverseProxy.Swagger
                         var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
                         var doc = new OpenApiStreamReader().Read(stream, out _);
 
+                        if (swagger.MetadataPath == swaggerPath)
+                        {
+                            swaggerDoc.Info = doc.Info;
+                        }
+
                         foreach (var path in doc.Paths)
                         {
                             var key = path.Key;
