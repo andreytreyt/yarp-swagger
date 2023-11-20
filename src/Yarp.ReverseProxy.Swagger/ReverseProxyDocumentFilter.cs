@@ -45,6 +45,7 @@ namespace Yarp.ReverseProxy.Swagger
                 return;
             }
 
+            var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
@@ -84,7 +85,7 @@ namespace Yarp.ReverseProxy.Swagger
 
                         if (swagger.MetadataPath == swaggerPath)
                         {
-                            swaggerDoc.Info = doc.Info;
+                            info = doc.Info;
                         }
 
                         foreach (var path in doc.Paths)
@@ -131,6 +132,7 @@ namespace Yarp.ReverseProxy.Swagger
                 }
             }
 
+            swaggerDoc.Info = info;
             swaggerDoc.Paths = paths;
             swaggerDoc.SecurityRequirements = securityRequirements;
             swaggerDoc.Components = components;
