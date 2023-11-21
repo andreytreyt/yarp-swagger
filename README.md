@@ -283,3 +283,34 @@ Update appsettings.json:
   }
 }
 ```
+
+# Swagger Metadata
+
+If you want to publish the API metadata ([OpenAPI info object](https://swagger.io/specification/#info-object)) from the configured swaggers, specify a path from the list of configured paths using the `MetadataPath` option. This will overwrite the cluster metadata with that of the swagger metadata.
+
+Update appsettings.json:
+
+```json lines
+{
+  "ReverseProxy": {
+    "Clusters": {
+      "App1Cluster": {
+        "Destinations": {
+          "Default": {
+            "Address": "https://localhost:5101",
+            "Swaggers": [
+              {
+                "PrefixPath": "/proxy-app1",
+                "MetadataPath": "/swagger/v1/swagger.json", // <-- this line
+                "Paths": [
+                  "/swagger/v1/swagger.json"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```

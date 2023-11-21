@@ -45,6 +45,7 @@ namespace Yarp.ReverseProxy.Swagger
                 return;
             }
 
+            var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
@@ -81,6 +82,11 @@ namespace Yarp.ReverseProxy.Swagger
                     {
                         var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
                         var doc = new OpenApiStreamReader().Read(stream, out _);
+
+                        if (swagger.MetadataPath == swaggerPath)
+                        {
+                            info = doc.Info;
+                        }
 
                         foreach (var path in doc.Paths)
                         {
@@ -126,6 +132,7 @@ namespace Yarp.ReverseProxy.Swagger
                 }
             }
 
+            swaggerDoc.Info = info;
             swaggerDoc.Paths = paths;
             swaggerDoc.SecurityRequirements = securityRequirements;
             swaggerDoc.Components = components;
