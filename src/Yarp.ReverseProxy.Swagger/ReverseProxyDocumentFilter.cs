@@ -49,6 +49,7 @@ namespace Yarp.ReverseProxy.Swagger
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
+            var tags = new List<OpenApiTag>();
 
             foreach (var destination in cluster.Destinations)
             {
@@ -128,6 +129,7 @@ namespace Yarp.ReverseProxy.Swagger
 
                         components.Add(doc.Components);
                         securityRequirements.AddRange(doc.SecurityRequirements);
+                        tags.AddRange(doc.Tags);
                     }
                 }
             }
@@ -136,6 +138,7 @@ namespace Yarp.ReverseProxy.Swagger
             swaggerDoc.Paths = paths;
             swaggerDoc.SecurityRequirements = securityRequirements;
             swaggerDoc.Components = components;
+            swaggerDoc.Tags = tags;
         }
 
         private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(ReverseProxyDocumentFilterConfig config)
