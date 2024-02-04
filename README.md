@@ -135,25 +135,67 @@ builder.Services
 
 Create (if doesn't exist) or update [ConfigureSwaggerOptions.cs](sample/Yarp/Configs/ConfigureSwaggerOptions.cs):
 
+**When loading from code:**
+
 ```csharp
-public void Configure(SwaggerGenOptions options)
+public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
 {
-    var filterDescriptors = new List<FilterDescriptor>();
-
-    foreach (var cluster in _reverseProxyDocumentFilterConfig.Clusters)
+    public void Configure(SwaggerGenOptions options)
     {
-        options.SwaggerDoc(cluster.Key, new OpenApiInfo {Title = cluster.Key, Version = cluster.Key});
+        var filterDescriptors = new List<FilterDescriptor>();
+    
+        foreach (var cluster in _reverseProxyDocumentFilterConfig.Clusters)
+        {
+            options.SwaggerDoc(cluster.Key, new OpenApiInfo {Title = cluster.Key, Version = cluster.Key});
+        }
+    
+        filterDescriptors.Add(new FilterDescriptor
+        {
+            Type = typeof(ReverseProxyDocumentFilter),
+            Arguments = Array.Empty<object>()
+        });
+    
+        options.DocumentFilterDescriptors = filterDescriptors;
     }
-
-    filterDescriptors.Add(new FilterDescriptor
-    {
-        Type = typeof(ReverseProxyDocumentFilter),
-        Arguments = Array.Empty<object>()
-    });
-
-    options.DocumentFilterDescriptors = filterDescriptors;
 }
 ```
+
+**When loading from appSettings.json**
+
+```csharp
+    public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
+    {
+        private readonly IConfiguration _configuration;
+
+        public ConfigureSwaggerOptions(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public void Configure(SwaggerGenOptions options)
+        {
+            var filterDescriptors = new List<FilterDescriptor>();
+            var clusterSectionName = "ReverseProxy:Routes";
+            var clusters = _configuration.GetSection(clusterSectionName).GetChildren();
+
+            foreach (var cluster in clusters.AsEnumerable())
+            {
+                var clusterId = _configuration.GetSection($"{clusterSectionName}:{cluster.Key}:ClusterId").Value;
+                options.SwaggerDoc(clusterId, new OpenApiInfo { Title = clusterId, Version = clusterId });
+            }
+
+            filterDescriptors.Add(new FilterDescriptor
+            {
+                Type = typeof(ReverseProxyDocumentFilter),
+                Arguments = Array.Empty<object>()
+            });
+
+            options.DocumentFilterDescriptors = filterDescriptors;
+        }
+    }
+```
+
+
 
 Update Program.cs:
 
