@@ -257,6 +257,7 @@ Update appsettings.json:
 
 If you want to publish only some configured path in YARP, you can use the `AddOnlyPublishedPaths` option.
 (For using these options, you need to add Methods configuration in the Match block of the YARP configuration.)
+
 Update appsettings.json:
 
 ```json lines
@@ -311,6 +312,23 @@ Update appsettings.json:
         }
       }
     }
+  }
+}
+```
+
+# Common Swagger Document
+
+If you want to combine multiple swagger documents into one, you can use the `Swagger` option.
+
+Update appsettings.json:
+
+```json lines
+{
+  "ReverseProxy": {
+    "Swagger": { // <-- this block
+      "IsCommonDocument": true,
+      "CommonDocumentName": "YARP"
+    },
   }
 }
 ```

@@ -2,6 +2,7 @@ using IdentityModel.Client;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Yarp.Configs;
+using Yarp.Extensions;
 using Yarp.ReverseProxy.Swagger;
 using Yarp.ReverseProxy.Swagger.Extensions;
 
@@ -41,10 +42,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         var config = app.Services.GetRequiredService<IOptionsMonitor<ReverseProxyDocumentFilterConfig>>().CurrentValue;
-        foreach (var cluster in config.Clusters)
-        {
-            options.SwaggerEndpoint($"/swagger/{cluster.Key}/swagger.json", cluster.Key);
-        }
+        options.ConfigureSwaggerEndpoints(config);
     });
 }
 
