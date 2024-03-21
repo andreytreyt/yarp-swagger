@@ -6,6 +6,7 @@ namespace Yarp.ReverseProxy.Swagger
 {
     public sealed class ReverseProxyDocumentFilterConfig
     {
+        public SwaggerConfig Swagger { get; set; } = new();
         public IReadOnlyDictionary<string, RouteConfig> Routes {get; set; } 
         public IReadOnlyDictionary<string, Cluster> Clusters { get; set; }
 
@@ -28,6 +29,12 @@ namespace Yarp.ReverseProxy.Swagger
                     public string MetadataPath { get; set; }
                 }
             }
+        }
+        
+        public sealed class SwaggerConfig
+        {
+            public bool IsCommonDocument { get; set; } = false;
+            public string CommonDocumentName { get; set; } = "YARP";
         }
 
         public bool IsEmpty => Clusters?.Any() != true;

@@ -22,7 +22,9 @@ namespace Yarp.ReverseProxy.Swagger
         {
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
+            
             configOptions.OnChange(config => { _config = config; });
+            
             _operationTypeMapping = new Dictionary<string, OperationType>
             {
                 {"GET", OperationType.Get},
@@ -36,100 +38,138 @@ namespace Yarp.ReverseProxy.Swagger
             };
         }
 
-        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+        public void Apply(
+            OpenApiDocument swaggerDoc,
+            DocumentFilterContext context
+            )
         {
-            if (_config.IsEmpty
-                || false == _config.Clusters.TryGetValue(context.DocumentName, out var cluster)
-                || true != cluster.Destinations?.Any())
+            if (_config.IsEmpty)
             {
                 return;
             }
+            
+            IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters;
 
+            if (_config.Swagger.IsCommonDocument)
+            {
+                clusters = _config.Clusters;
+            }
+            else
+            {
+                clusters = _config.Clusters
+                    .Where(x => x.Key == context.DocumentName)
+                    .ToDictionary(x => x.Key, x => x.Value);
+            }
+            
+            Apply(swaggerDoc, clusters);
+        }
+        
+        private void Apply(
+            OpenApiDocument swaggerDoc,
+            IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters
+            )
+        {
+            if (true != clusters?.Any())
+            {
+                return;
+            }
+            
             var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
             var securityRequirements = new List<OpenApiSecurityRequirement>();
             var tags = new List<OpenApiTag>();
 
-            foreach (var destination in cluster.Destinations)
+            foreach (var clusterKeyValuePair in clusters)
             {
-                if (true != destination.Value.Swaggers?.Any())
+                var clusterKey = clusterKeyValuePair.Key;
+                var cluster = clusterKeyValuePair.Value;
+                
+                if (true != cluster.Destinations?.Any())
                 {
                     continue;
                 }
-
-                var httpClient = _httpClientFactory.CreateClient($"{context.DocumentName}_{destination.Key}");
-
-                foreach (var swagger in destination.Value.Swaggers)
+                
+                foreach (var destination in cluster.Destinations)
                 {
-                    if (swagger.Paths?.Any() != true)
+                    if (true != destination.Value.Swaggers?.Any())
                     {
                         continue;
                     }
 
-                    IReadOnlyDictionary<string, IEnumerable<string>> publishedRoutes = null;
-                    if (swagger.AddOnlyPublishedPaths)
-                    {
-                        publishedRoutes = GetPublishedPaths(_config);
-                    }
+                    var httpClient = _httpClientFactory.CreateClient($"{clusterKey}_{destination.Key}");
 
-                    Regex filterRegex = null;
-                    if (false == string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
+                    foreach (var swagger in destination.Value.Swaggers)
                     {
-                        filterRegex = new Regex(swagger.PathFilterRegexPattern);
-                    }
-
-                    foreach (var swaggerPath in swagger.Paths)
-                    {
-                        var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
-                        var doc = new OpenApiStreamReader().Read(stream, out _);
-
-                        if (swagger.MetadataPath == swaggerPath)
+                        if (swagger.Paths?.Any() != true)
                         {
-                            info = doc.Info;
+                            continue;
                         }
 
-                        foreach (var path in doc.Paths)
+                        IReadOnlyDictionary<string, IEnumerable<string>> publishedRoutes = null;
+                        if (swagger.AddOnlyPublishedPaths)
                         {
-                            var key = path.Key;
-                            var value = path.Value;
+                            publishedRoutes = GetPublishedPaths(_config);
+                        }
 
-                            if (filterRegex != null
-                                && false == filterRegex.IsMatch(key))
+                        Regex filterRegex = null;
+                        if (false == string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
+                        {
+                            filterRegex = new Regex(swagger.PathFilterRegexPattern);
+                        }
+
+                        foreach (var swaggerPath in swagger.Paths)
+                        {
+                            var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
+                            var doc = new OpenApiStreamReader().Read(stream, out _);
+
+                            if (swagger.MetadataPath == swaggerPath)
                             {
-                                continue;
+                                info = doc.Info;
                             }
 
-                            if (publishedRoutes != null)
+                            foreach (var path in doc.Paths)
                             {
-                                var pathKey = $"{swagger.PrefixPath}{path.Key}";
-                                if (!publishedRoutes.ContainsKey(pathKey))
+                                var key = path.Key;
+                                var value = path.Value;
+
+                                if (filterRegex != null
+                                    && false == filterRegex.IsMatch(key))
                                 {
                                     continue;
                                 }
 
-                                var methods = publishedRoutes[pathKey];
-                                var operations = _operationTypeMapping
-                                    .Where(q => methods.Contains(q.Key))
-                                    .Select(q => q.Value)
-                                    .ToList();
-                                var operationKeys = path.Value.Operations.Keys.ToList();
-                                
-                                foreach (var operationKey in operationKeys)
+                                if (publishedRoutes != null)
                                 {
-                                    if (false == operations.Contains(operationKey))
+                                    var pathKey = $"{swagger.PrefixPath}{path.Key}";
+                                    if (!publishedRoutes.ContainsKey(pathKey))
                                     {
-                                        path.Value.Operations.Remove(operationKey);
+                                        continue;
+                                    }
+
+                                    var methods = publishedRoutes[pathKey];
+                                    var operations = _operationTypeMapping
+                                        .Where(q => methods.Contains(q.Key))
+                                        .Select(q => q.Value)
+                                        .ToList();
+                                    var operationKeys = path.Value.Operations.Keys.ToList();
+
+                                    foreach (var operationKey in operationKeys)
+                                    {
+                                        if (false == operations.Contains(operationKey))
+                                        {
+                                            path.Value.Operations.Remove(operationKey);
+                                        }
                                     }
                                 }
+
+                                paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                             }
 
-                            paths.TryAdd($"{swagger.PrefixPath}{key}", value);
+                            components.Add(doc.Components);
+                            securityRequirements.AddRange(doc.SecurityRequirements);
+                            tags.AddRange(doc.Tags);
                         }
-
-                        components.Add(doc.Components);
-                        securityRequirements.AddRange(doc.SecurityRequirements);
-                        tags.AddRange(doc.Tags);
                     }
                 }
             }
