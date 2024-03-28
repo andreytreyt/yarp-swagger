@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -6,7 +7,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Swagger.Extensions;
+using Yarp.ReverseProxy.Transforms.Builder;
 
 namespace Yarp.ReverseProxy.Swagger
 {
@@ -15,11 +18,14 @@ namespace Yarp.ReverseProxy.Swagger
         private readonly IHttpClientFactory _httpClientFactory;
         private ReverseProxyDocumentFilterConfig _config;
         private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
+        private readonly List<ITransformFactory> _factories;
 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
-            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions)
+            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions,
+            IEnumerable<ITransformFactory> factories)
         {
+            _factories = factories?.ToList() ?? throw new ArgumentNullException(nameof(factories));
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
             
@@ -84,7 +90,8 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 var clusterKey = clusterKeyValuePair.Key;
                 var cluster = clusterKeyValuePair.Value;
-                
+                var routes = _config.Routes.Where(_ => _.Value.ClusterId == clusterKey).Select(_ => _.Value);
+
                 if (true != cluster.Destinations?.Any())
                 {
                     continue;
@@ -139,6 +146,7 @@ namespace Yarp.ReverseProxy.Swagger
                                     continue;
                                 }
 
+                                var operationKeys = path.Value.Operations.Keys.ToList();
                                 if (publishedRoutes != null)
                                 {
                                     var pathKey = $"{swagger.PrefixPath}{path.Key}";
@@ -152,7 +160,6 @@ namespace Yarp.ReverseProxy.Swagger
                                         .Where(q => methods.Contains(q.Key))
                                         .Select(q => q.Value)
                                         .ToList();
-                                    var operationKeys = path.Value.Operations.Keys.ToList();
 
                                     foreach (var operationKey in operationKeys)
                                     {
@@ -161,6 +168,11 @@ namespace Yarp.ReverseProxy.Swagger
                                             path.Value.Operations.Remove(operationKey);
                                         }
                                     }
+                                }
+
+                                foreach (var operationKey in operationKeys)
+                                {
+                                    ApplySwaggerTransformation(operationKeys, path, routes);
                                 }
 
                                 paths.TryAdd($"{swagger.PrefixPath}{key}", value);
@@ -204,6 +216,49 @@ namespace Yarp.ReverseProxy.Swagger
             }
 
             return validRoutes;
+        }
+
+        private void ApplySwaggerTransformation(List<OperationType> operationKeys, KeyValuePair<string, OpenApiPathItem> path, IEnumerable<RouteConfig> routes)
+        {
+            foreach (var operationKey in operationKeys)
+            {
+                path.Value.Operations.TryGetValue(operationKey, out var operation);
+
+                foreach (var parameter in operation.Parameters)
+                {
+                    foreach (var route in routes)
+                    {
+                        if (route.Transforms?.Count > 0)
+                        {
+                            foreach (var transformation in route.Transforms)
+                            {
+                                var handled = false;
+                                foreach (var factory in _factories)
+                                {
+                                    if (factory is ISwaggerTransformFactory)
+                                    {
+                                        var swaggerFactory = factory as ISwaggerTransformFactory;
+                                        if (swaggerFactory.Build(operation, transformation))
+                                        {
+                                            handled = true;
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        handled = true;
+                                    }
+                                }
+
+                                if (!handled)
+                                {
+                                    throw new ArgumentException($"Unknown Swagger transformation: {string.Join(';', transformation.Keys)}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
