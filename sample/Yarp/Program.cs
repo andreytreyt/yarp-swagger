@@ -5,6 +5,7 @@ using Yarp.Configs;
 using Yarp.Extensions;
 using Yarp.ReverseProxy.Swagger;
 using Yarp.ReverseProxy.Swagger.Extensions;
+using Yarp.Transformations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,7 @@ builder.Services
     .AddReverseProxy()
     .LoadFromConfig(configuration)
     .LoadFromConfig(configurationForOnlyPublishedRoutes)
+    .AddTransformFactory<HeaderTransformFactory>()
     .AddSwagger(configuration)
     .AddSwagger(configurationForOnlyPublishedRoutes);
 

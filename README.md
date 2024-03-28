@@ -332,3 +332,64 @@ Update appsettings.json:
   }
 }
 ```
+
+# Swagger Transformation
+
+If you want to transform the Swagger to fit the modifications done by the transformations you have to implement the changes in the `ISwaggerTransformFactory`. Below is an example from a custom transformation called `RenameHeader`.
+
+```csharp
+public class HeaderTransformFactory : ITransformFactory, ISwaggerTransformFactory
+{
+    public bool Validate(TransformRouteValidationContext context, IReadOnlyDictionary<string, string> transformValues)
+    {
+        // validation implementation of custom transformation
+    }
+    
+    public bool Build(TransformBuilderContext context, IReadOnlyDictionary<string, string> transformValues)
+    {
+        // transform implementation of custom transformation
+    }
+
+    /// <summary>
+    /// Header title rename transformation for Swagger
+    /// </summary>
+    /// <param name="operation"></param>
+    /// <param name="transformValues"></param>
+    /// <returns></returns>
+    public bool Build(OpenApiOperation operation, IReadOnlyDictionary<string, string> transformValues)
+    {
+        if (transformValues.ContainsKey("RenameHeader"))
+        {
+            foreach (var parameter in operation.Parameters)
+            {
+                if (parameter.In.HasValue && parameter.In.Value.ToString().Equals("Header"))
+                {
+                    if (transformValues.TryGetValue("RenameHeader", out var header)
+                        && transformValues.TryGetValue("Set", out var newHeader))
+                    {
+                        if (parameter.Name == newHeader)
+                        {
+                            parameter.Name = header;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+}
+
+```
+
+Then register the transformation in `Program.cs`
+
+```
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(configuration)
+    .AddTransformFactory<HeaderTransformFactory>()
+    .AddSwagger(configuration)
+```
