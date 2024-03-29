@@ -170,10 +170,7 @@ namespace Yarp.ReverseProxy.Swagger
                                     }
                                 }
 
-                                foreach (var operationKey in operationKeys)
-                                {
-                                    ApplySwaggerTransformation(operationKeys, path, routes);
-                                }
+                                ApplySwaggerTransformation(operationKeys, path, routes);
 
                                 paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                             }
