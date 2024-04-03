@@ -25,12 +25,12 @@ namespace Yarp.ReverseProxy.Swagger
             IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions,
             IEnumerable<ITransformFactory> factories)
         {
-            _factories = factories?.ToList() ?? throw new ArgumentNullException(nameof(factories));
+            _factories = factories?.ToList();
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
-            
+
             configOptions.OnChange(config => { _config = config; });
-            
+
             _operationTypeMapping = new Dictionary<string, OperationType>
             {
                 {"GET", OperationType.Get},
@@ -53,7 +53,7 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 return;
             }
-            
+
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters;
 
             if (_config.Swagger.IsCommonDocument)
@@ -66,10 +66,10 @@ namespace Yarp.ReverseProxy.Swagger
                     .Where(x => x.Key == context.DocumentName)
                     .ToDictionary(x => x.Key, x => x.Value);
             }
-            
+
             Apply(swaggerDoc, clusters);
         }
-        
+
         private void Apply(
             OpenApiDocument swaggerDoc,
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters
@@ -79,7 +79,7 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 return;
             }
-            
+
             var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
@@ -96,7 +96,7 @@ namespace Yarp.ReverseProxy.Swagger
                 {
                     continue;
                 }
-                
+
                 foreach (var destination in cluster.Destinations)
                 {
                     if (true != destination.Value.Swaggers?.Any())
@@ -217,6 +217,11 @@ namespace Yarp.ReverseProxy.Swagger
 
         private void ApplySwaggerTransformation(List<OperationType> operationKeys, KeyValuePair<string, OpenApiPathItem> path, IEnumerable<RouteConfig> routes)
         {
+            if (_factories == null || !_factories.Any())
+            {
+                return;
+            }
+
             foreach (var operationKey in operationKeys)
             {
                 path.Value.Operations.TryGetValue(operationKey, out var operation);
@@ -230,6 +235,7 @@ namespace Yarp.ReverseProxy.Swagger
                             foreach (var transformation in route.Transforms)
                             {
                                 var handled = false;
+
                                 foreach (var factory in _factories)
                                 {
                                     if (factory is ISwaggerTransformFactory)
