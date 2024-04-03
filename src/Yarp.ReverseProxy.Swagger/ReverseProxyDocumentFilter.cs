@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -6,7 +7,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Swagger.Extensions;
+using Yarp.ReverseProxy.Transforms.Builder;
 
 namespace Yarp.ReverseProxy.Swagger
 {
@@ -15,16 +18,19 @@ namespace Yarp.ReverseProxy.Swagger
         private readonly IHttpClientFactory _httpClientFactory;
         private ReverseProxyDocumentFilterConfig _config;
         private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
+        private readonly List<ITransformFactory> _factories;
 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
-            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions)
+            IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions,
+            IEnumerable<ITransformFactory> factories)
         {
+            _factories = factories?.ToList();
             _config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
-            
+
             configOptions.OnChange(config => { _config = config; });
-            
+
             _operationTypeMapping = new Dictionary<string, OperationType>
             {
                 {"GET", OperationType.Get},
@@ -47,7 +53,7 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 return;
             }
-            
+
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters;
 
             if (_config.Swagger.IsCommonDocument)
@@ -60,10 +66,10 @@ namespace Yarp.ReverseProxy.Swagger
                     .Where(x => x.Key == context.DocumentName)
                     .ToDictionary(x => x.Key, x => x.Value);
             }
-            
+
             Apply(swaggerDoc, clusters);
         }
-        
+
         private void Apply(
             OpenApiDocument swaggerDoc,
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters
@@ -73,7 +79,7 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 return;
             }
-            
+
             var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
@@ -84,12 +90,12 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 var clusterKey = clusterKeyValuePair.Key;
                 var cluster = clusterKeyValuePair.Value;
-                
+
                 if (true != cluster.Destinations?.Any())
                 {
                     continue;
                 }
-                
+
                 foreach (var destination in cluster.Destinations)
                 {
                     if (true != destination.Value.Swaggers?.Any())
@@ -139,6 +145,7 @@ namespace Yarp.ReverseProxy.Swagger
                                     continue;
                                 }
 
+                                var operationKeys = path.Value.Operations.Keys.ToList();
                                 if (publishedRoutes != null)
                                 {
                                     var pathKey = $"{swagger.PrefixPath}{path.Key}";
@@ -152,7 +159,6 @@ namespace Yarp.ReverseProxy.Swagger
                                         .Where(q => methods.Contains(q.Key))
                                         .Select(q => q.Value)
                                         .ToList();
-                                    var operationKeys = path.Value.Operations.Keys.ToList();
 
                                     foreach (var operationKey in operationKeys)
                                     {
@@ -162,6 +168,8 @@ namespace Yarp.ReverseProxy.Swagger
                                         }
                                     }
                                 }
+
+                                ApplySwaggerTransformation(operationKeys, path, clusterKey);
 
                                 paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                             }
@@ -204,6 +212,32 @@ namespace Yarp.ReverseProxy.Swagger
             }
 
             return validRoutes;
+        }
+
+        private void ApplySwaggerTransformation(List<OperationType> operationKeys, KeyValuePair<string, OpenApiPathItem> path, string clusterKey)
+        {
+            var factories = _factories?.Where(x => x is ISwaggerTransformFactory).ToList();
+
+            if (factories == null) return;
+
+            foreach (var operationKey in operationKeys)
+            {
+                path.Value.Operations.TryGetValue(operationKey, out var operation);
+
+                var transforms = _config.Routes
+                    .Where(x => x.Value.ClusterId == clusterKey)
+                    .Where(x => x.Value.Transforms != null)
+                    .SelectMany(x => x.Value.Transforms)
+                    .ToList();
+
+                foreach (var swaggerFactory in factories.Select(factory => factory as ISwaggerTransformFactory))
+                {
+                    foreach (var transform in transforms)
+                    {
+                        swaggerFactory?.Build(operation, transform);
+                    }
+                }
+            }
         }
     }
 }
