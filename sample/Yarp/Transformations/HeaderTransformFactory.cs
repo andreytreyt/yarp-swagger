@@ -77,10 +77,7 @@ public class HeaderTransformFactory : ITransformFactory, ISwaggerTransformFactor
                     transformContext.ProxyRequest.Headers.Remove(header);
 
                     // Add a new header with the same value(s) as the original header
-                    foreach (var value in headerValue)
-                    {
-                        transformContext.ProxyRequest.Headers.Add(newHeader, value);
-                    }
+                    transformContext.ProxyRequest.Headers.Add(newHeader, headerValue);
                 }
 
                 return default;
