@@ -90,7 +90,6 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 var clusterKey = clusterKeyValuePair.Key;
                 var cluster = clusterKeyValuePair.Value;
-                var routes = _config.Routes.Where(_ => _.Value.ClusterId == clusterKey).Select(_ => _.Value);
 
                 if (true != cluster.Destinations?.Any())
                 {
@@ -170,7 +169,7 @@ namespace Yarp.ReverseProxy.Swagger
                                     }
                                 }
 
-                                ApplySwaggerTransformation(operationKeys, path, routes);
+                                ApplySwaggerTransformation(operationKeys, path, clusterKey);
 
                                 paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                             }
@@ -215,50 +214,27 @@ namespace Yarp.ReverseProxy.Swagger
             return validRoutes;
         }
 
-        private void ApplySwaggerTransformation(List<OperationType> operationKeys, KeyValuePair<string, OpenApiPathItem> path, IEnumerable<RouteConfig> routes)
+        private void ApplySwaggerTransformation(List<OperationType> operationKeys, KeyValuePair<string, OpenApiPathItem> path, string clusterKey)
         {
-            if (_factories == null || !_factories.Any())
-            {
-                return;
-            }
+            var factories = _factories?.Where(x => x is ISwaggerTransformFactory).ToList();
+
+            if (factories == null) return;
 
             foreach (var operationKey in operationKeys)
             {
                 path.Value.Operations.TryGetValue(operationKey, out var operation);
 
-                foreach (var parameter in operation.Parameters)
+                var transforms = _config.Routes
+                    .Where(x => x.Value.ClusterId == clusterKey)
+                    .Where(x => x.Value.Transforms != null)
+                    .SelectMany(x => x.Value.Transforms)
+                    .ToList();
+
+                foreach (var swaggerFactory in factories.Select(factory => factory as ISwaggerTransformFactory))
                 {
-                    foreach (var route in routes)
+                    foreach (var transform in transforms)
                     {
-                        if (route.Transforms?.Count > 0)
-                        {
-                            foreach (var transformation in route.Transforms)
-                            {
-                                var handled = false;
-
-                                foreach (var factory in _factories)
-                                {
-                                    if (factory is ISwaggerTransformFactory)
-                                    {
-                                        var swaggerFactory = factory as ISwaggerTransformFactory;
-                                        if (swaggerFactory.Build(operation, transformation))
-                                        {
-                                            handled = true;
-                                            break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        handled = true;
-                                    }
-                                }
-
-                                if (!handled)
-                                {
-                                    throw new ArgumentException($"Unknown Swagger transformation: {string.Join(';', transformation.Keys)}");
-                                }
-                            }
-                        }
+                        swaggerFactory?.Build(operation, transform);
                     }
                 }
             }
