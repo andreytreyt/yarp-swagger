@@ -97,6 +97,7 @@ ReverseProxyDocumentFilterConfig GetSwaggerConfig()
 {
     return new ReverseProxyDocumentFilterConfig
     {
+        Routes = GetRoutes().ToDictionary(_ => _.RouteId, _ => _),
         Clusters = new Dictionary<string, ReverseProxyDocumentFilterConfig.Cluster>
         {
             {
