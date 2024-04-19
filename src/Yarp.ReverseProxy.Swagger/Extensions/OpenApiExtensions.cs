@@ -7,11 +7,11 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
     {
         internal static void Add(this OpenApiComponents source, OpenApiComponents components)
         {
-             if (components == null)
-             {
-                 return;
-             }
-            
+            if (components == null)
+            {
+                return;
+            }
+
             foreach (var data in components.Extensions)
             {
                 source.Extensions.TryAdd(data.Key, data.Value);

@@ -7,7 +7,7 @@ namespace Yarp.ReverseProxy.Swagger
     public sealed class ReverseProxyDocumentFilterConfig
     {
         public SwaggerConfig Swagger { get; set; } = new();
-        public IReadOnlyDictionary<string, RouteConfig> Routes {get; set; } 
+        public IReadOnlyDictionary<string, RouteConfig> Routes { get; set; }
         public IReadOnlyDictionary<string, Cluster> Clusters { get; set; }
 
         public sealed class Cluster
@@ -30,7 +30,7 @@ namespace Yarp.ReverseProxy.Swagger
                 }
             }
         }
-        
+
         public sealed class SwaggerConfig
         {
             public bool IsCommonDocument { get; set; } = false;

@@ -1,4 +1,3 @@
-using Identity;
 using Identity.Configs;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -13,67 +13,67 @@ namespace Yarp.ReverseProxy.Swagger
     public sealed class ReverseProxyDocumentFilter : IDocumentFilter
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private ReverseProxyDocumentFilterConfig _config;
+        private ReverseProxyDocumentFilterConfig config;
         private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
 
         public ReverseProxyDocumentFilter(
             IHttpClientFactory httpClientFactory,
             IOptionsMonitor<ReverseProxyDocumentFilterConfig> configOptions)
         {
-            _config = configOptions.CurrentValue;
+            config = configOptions.CurrentValue;
             _httpClientFactory = httpClientFactory;
-            
-            configOptions.OnChange(config => { _config = config; });
-            
+
+            configOptions.OnChange(x => { config = x; });
+
             _operationTypeMapping = new Dictionary<string, OperationType>
             {
-                {"GET", OperationType.Get},
-                {"POST", OperationType.Post},
-                {"PUT", OperationType.Put},
-                {"DELETE", OperationType.Delete},
-                {"PATCH", OperationType.Patch},
-                {"HEAD", OperationType.Head},
-                {"OPTIONS", OperationType.Options},
-                {"TRACE", OperationType.Trace},
+                { "GET", OperationType.Get },
+                { "POST", OperationType.Post },
+                { "PUT", OperationType.Put },
+                { "DELETE", OperationType.Delete },
+                { "PATCH", OperationType.Patch },
+                { "HEAD", OperationType.Head },
+                { "OPTIONS", OperationType.Options },
+                { "TRACE", OperationType.Trace },
             };
         }
 
         public void Apply(
             OpenApiDocument swaggerDoc,
             DocumentFilterContext context
-            )
+        )
         {
-            if (_config.IsEmpty)
+            if (config.IsEmpty)
             {
                 return;
             }
-            
+
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters;
 
-            if (_config.Swagger.IsCommonDocument)
+            if (config.Swagger.IsCommonDocument)
             {
-                clusters = _config.Clusters;
+                clusters = config.Clusters;
             }
             else
             {
-                clusters = _config.Clusters
+                clusters = config.Clusters
                     .Where(x => x.Key == context.DocumentName)
                     .ToDictionary(x => x.Key, x => x.Value);
             }
-            
+
             Apply(swaggerDoc, clusters);
         }
-        
+
         private void Apply(
             OpenApiDocument swaggerDoc,
             IReadOnlyDictionary<string, ReverseProxyDocumentFilterConfig.Cluster> clusters
-            )
+        )
         {
             if (true != clusters?.Any())
             {
                 return;
             }
-            
+
             var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
             var components = new OpenApiComponents();
@@ -84,12 +84,12 @@ namespace Yarp.ReverseProxy.Swagger
             {
                 var clusterKey = clusterKeyValuePair.Key;
                 var cluster = clusterKeyValuePair.Value;
-                
+
                 if (true != cluster.Destinations?.Any())
                 {
                     continue;
                 }
-                
+
                 foreach (var destination in cluster.Destinations)
                 {
                     if (true != destination.Value.Swaggers?.Any())
@@ -109,7 +109,7 @@ namespace Yarp.ReverseProxy.Swagger
                         IReadOnlyDictionary<string, IEnumerable<string>> publishedRoutes = null;
                         if (swagger.AddOnlyPublishedPaths)
                         {
-                            publishedRoutes = GetPublishedPaths(_config);
+                            publishedRoutes = GetPublishedPaths(config);
                         }
 
                         Regex filterRegex = null;
@@ -181,7 +181,8 @@ namespace Yarp.ReverseProxy.Swagger
             swaggerDoc.Tags = tags;
         }
 
-        private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(ReverseProxyDocumentFilterConfig config)
+        private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(
+            ReverseProxyDocumentFilterConfig config)
         {
             var validRoutes = new Dictionary<string, IEnumerable<string>>();
             foreach (var route in config.Routes)
@@ -198,8 +199,10 @@ namespace Yarp.ReverseProxy.Swagger
                 else
                 {
                     if (route.Value.Match.Methods != null)
+                    {
                         validRoutes[route.Value.Match.Path] =
                             validRoutes[route.Value.Match.Path].Concat(route.Value.Match.Methods);
+                    }
                 }
             }
 

@@ -14,14 +14,14 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
                 throw new ArgumentNullException(nameof(configurationSection));
 
             builder.Services.Configure<ReverseProxyDocumentFilterConfig>(configurationSection);
-            
+
             var config = configurationSection.Get<ReverseProxyDocumentFilterConfig>();
 
             ConfigureHttpClient(builder, config);
 
             return builder;
         }
-        
+
         public static IReverseProxyBuilder AddSwagger(
             this IReverseProxyBuilder builder,
             ReverseProxyDocumentFilterConfig config)

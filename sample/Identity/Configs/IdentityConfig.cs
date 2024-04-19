@@ -4,14 +4,14 @@ namespace Identity.Configs;
 
 internal sealed class IdentityConfig
 {
-    public IReadOnlyList<string> Scopes { get; init; } = new List<string>();
-    public IReadOnlyList<Client> Clients { get; init; } = new List<Client>();
+    public IReadOnlyList<string> Scopes { get; init; } = [];
+    public IReadOnlyList<Client> Clients { get; init; } = [];
 
     internal sealed class Client
     {
-        public string ClientId { get; init; }
-        public string ClientSecret { get; init; }
-        public IReadOnlyList<string> AllowedScopes { get; init; } = new List<string>();
+        public required string ClientId { get; init; }
+        public required string ClientSecret { get; init; }
+        public IReadOnlyList<string> AllowedScopes { get; init; } = [];
     }
     
     public IEnumerable<IdentityServer4.Models.Client> GetClients()
@@ -24,7 +24,7 @@ internal sealed class IdentityConfig
                 new Secret(x.ClientSecret.Sha256())
             },
             AllowedGrantTypes = GrantTypes.ClientCredentials,
-            AllowedScopes = x.AllowedScopes.ToArray()
+            AllowedScopes = [.. x.AllowedScopes]
         });
     }
     
