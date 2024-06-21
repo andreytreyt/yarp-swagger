@@ -51,7 +51,7 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
                 {
                     var httpClientBuilder = builder.Services.AddHttpClient($"{cluster.Key}_{destination.Key}");
 
-                    if (false == string.IsNullOrWhiteSpace(destination.Value.AccessTokenClientName))
+                    if (!string.IsNullOrWhiteSpace(destination.Value.AccessTokenClientName))
                     {
                         httpClientBuilder.AddClientAccessTokenHandler(destination.Value.AccessTokenClientName);
                     }

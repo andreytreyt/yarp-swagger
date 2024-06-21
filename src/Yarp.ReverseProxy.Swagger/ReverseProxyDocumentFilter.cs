@@ -118,7 +118,7 @@ namespace Yarp.ReverseProxy.Swagger
                         }
 
                         Regex filterRegex = null;
-                        if (false == string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
+                        if (!string.IsNullOrWhiteSpace(swagger.PathFilterRegexPattern))
                         {
                             filterRegex = new Regex(swagger.PathFilterRegexPattern);
                         }
@@ -139,7 +139,7 @@ namespace Yarp.ReverseProxy.Swagger
                                 var value = path.Value;
 
                                 if (filterRegex != null
-                                    && false == filterRegex.IsMatch(key))
+                                    && !filterRegex.IsMatch(key))
                                 {
                                     continue;
                                 }
@@ -161,7 +161,7 @@ namespace Yarp.ReverseProxy.Swagger
 
                                     foreach (var operationKey in operationKeys)
                                     {
-                                        if (false == operations.Contains(operationKey))
+                                        if (!operations.Contains(operationKey))
                                         {
                                             path.Value.Operations.Remove(operationKey);
                                         }
@@ -199,7 +199,7 @@ namespace Yarp.ReverseProxy.Swagger
                     continue;
                 }
 
-                if (false == validRoutes.ContainsKey(route.Value.Match.Path))
+                if (!validRoutes.ContainsKey(route.Value.Match.Path))
                 {
                     validRoutes.TryAdd(route.Value.Match.Path, route.Value.Match.Methods);
                 }
