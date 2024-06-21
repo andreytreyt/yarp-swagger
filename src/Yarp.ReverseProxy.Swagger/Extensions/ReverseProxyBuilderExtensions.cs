@@ -33,6 +33,7 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             {
                 overriddenConfig.Routes = config.Routes;
                 overriddenConfig.Clusters = config.Clusters;
+                overriddenConfig.Swagger = config.Swagger;
             });
 
             ConfigureHttpClient(builder, config);
