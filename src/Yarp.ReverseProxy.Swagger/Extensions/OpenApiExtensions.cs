@@ -34,8 +34,9 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
                 while(!added && renameDuplicateComponents)
                 {
                     i++;
-                    data.Value.Reference.Id = $"{data.Key}{i}";
-                    added = source.Schemas.TryAdd($"{data.Key}{i}", data.Value);
+                    var key = $"{data.Key}{i}";
+                    data.Value.Reference.Id = key;
+                    added = source.Schemas.TryAdd(key, data.Value);
                 }
             }
 
