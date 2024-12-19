@@ -5,7 +5,7 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
 {
     public static class OpenApiExtensions
     {
-        internal static void Add(this OpenApiComponents source, OpenApiComponents components, bool renameDuplicateComponents = false)
+        internal static void Add(this OpenApiComponents source, OpenApiComponents components, bool renameDuplicateSchemas = false)
         {
             if (components == null)
             {
@@ -31,7 +31,7 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             {
                 bool added = source.Schemas.TryAdd(data.Key, data.Value);
                 int i = 1;
-                while(!added && renameDuplicateComponents)
+                while(!added && renameDuplicateSchemas)
                 {
                     i++;
                     var key = $"{data.Key}{i}";
