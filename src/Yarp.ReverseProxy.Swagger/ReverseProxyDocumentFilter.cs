@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -125,7 +126,12 @@ namespace Yarp.ReverseProxy.Swagger
 
                         foreach (var swaggerPath in swagger.Paths)
                         {
-                            var stream = httpClient.GetStreamAsync($"{destination.Value.Address}{swaggerPath}").Result;
+                            if (!Uri.TryCreate(new Uri(destination.Value.Address), swaggerPath, out Uri swaggerUrl))
+                            {
+                                throw new ArgumentException("Unable to combine specified url values");
+                            }
+
+                            var stream = httpClient.GetStreamAsync(swaggerUrl).Result;
                             var doc = new OpenApiStreamReader().Read(stream, out _);
 
                             if (swagger.MetadataPath == swaggerPath)
