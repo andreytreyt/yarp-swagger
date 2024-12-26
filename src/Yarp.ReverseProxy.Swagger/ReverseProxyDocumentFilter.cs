@@ -179,7 +179,7 @@ namespace Yarp.ReverseProxy.Swagger
                                 paths.TryAdd($"{swagger.PrefixPath}{key}", value);
                             }
 
-                            components.Add(doc.Components);
+                            components.Add(doc.Components, config.Swagger.RenameDuplicateSchemas);
                             securityRequirements.AddRange(doc.SecurityRequirements);
                             tags.AddRange(doc.Tags);
                         }
