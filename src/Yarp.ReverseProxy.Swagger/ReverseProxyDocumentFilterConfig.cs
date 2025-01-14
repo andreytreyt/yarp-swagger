@@ -35,7 +35,7 @@ namespace Yarp.ReverseProxy.Swagger
         {
             public bool IsCommonDocument { get; set; } = false;
             public string CommonDocumentName { get; set; } = "YARP";
-            public bool RenameDuplicateSchemas { get; set; } = false;
+            public string DuplicateSchemas { get; set; } = "First";
         }
 
         public bool IsEmpty => Clusters?.Any() != true;
