@@ -84,79 +84,97 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             }
         }
 
-        private static void MergeProperties(OpenApiComponents source, OpenApiSchema mainSchema, OpenApiSchema addSchema, bool baseCall)
+        private static void MergeProperties(OpenApiSchema mainSchema, OpenApiSchema addSchema)
         {
-            foreach (var property in addSchema.Properties)
-            {
-                var added = mainSchema.Properties.TryAdd(property.Key, property.Value);
-                if (!added)
-                {
-                    if(!string.IsNullOrWhiteSpace(property.Value.Reference?.ReferenceV3))
-                    {
-                        var sourceReference = source.Schemas[property.Key];
-                        MergeProperties(source, sourceReference, property.Value, false);
-                    }
-                    else if (mainSchema.Properties[property.Key].Type != property.Value.Type)
-                    {
-                        throw new System.Exception("Cannot merge properties with the same name but different types");
-                    }
+            IDictionary<string, OpenApiSchema> allMainProperties = GetAllProperties(mainSchema);
+            IDictionary<string, OpenApiSchema> allAddProperties = GetAllProperties(addSchema);
 
+            mainSchema = FixProperties(mainSchema, allMainProperties);
+
+            foreach (var property in allMainProperties)
+            {
+                if (!allAddProperties.ContainsKey(property.Key))
+                {
+                    var mainProperty = GetPropertyByName(mainSchema, property.Key);
+                    mainProperty.Nullable = true;
+                    mainSchema.Properties[property.Key] = mainProperty;
+                }
+            }
+
+            foreach (var property in allAddProperties)
+            {
+                if (allMainProperties.ContainsKey(property.Key))
+                {
                     if (property.Value.Nullable)
                     {
-                        mainSchema.Properties[property.Key].Nullable = true;
+                        var mainProperty = GetPropertyByName(mainSchema, property.Key);
+                        mainProperty.Nullable = true;
                     }
                 }
                 else
                 {
-                    property.Value.Nullable = true;
-                    mainSchema.Properties[property.Key] = property.Value;
+                    mainSchema.Properties.Add(property.Key, property.Value);
                 }
             }
+        }
 
-            if (addSchema.AllOf != null)
+        private static OpenApiSchema FixProperties(OpenApiSchema schema, IDictionary<string, OpenApiSchema> properties)
+        {
+            schema.AllOf.Clear();
+            schema.OneOf.Clear();
+            schema.Properties.Clear();
+
+            foreach (var property in properties)
             {
-                foreach (var allOfSchema in addSchema.AllOf)
-                {
-                    MergeProperties(source, mainSchema, allOfSchema, false);
-                }
-            }
+                KeyValuePair<string, OpenApiSchema> newProperty = new KeyValuePair<string, OpenApiSchema>(property.Key, new OpenApiSchema(property.Value));
+                schema.Properties.Add(newProperty);
 
-            if (addSchema.OneOf != null)
+            }
+            return schema;
+        }
+
+        private static OpenApiSchema? GetPropertyByName(OpenApiSchema schema, string name)
+        {
+            if (schema.Properties != null && schema.Properties.ContainsKey(name))
             {
-                foreach (var oneOfSchema in addSchema.OneOf)
-                {
-                    MergeProperties(source, mainSchema, oneOfSchema, false);
-                }
+                return schema.Properties[name];
             }
 
-            if (baseCall)
+            return null;
+        }
+
+        private static IDictionary<string, OpenApiSchema> GetAllProperties(OpenApiSchema schema, Dictionary<string, OpenApiSchema> properties = null)
+        {
+            if (properties == null)
             {
-                foreach (var propertyKey in mainSchema.Properties.Keys)
+                properties = new Dictionary<string, OpenApiSchema>();
+            }
+
+            if (schema.Properties != null)
+            {
+                foreach (var property in schema.Properties)
                 {
-                    if (addSchema.Properties.Keys.Contains(propertyKey))
-                    {
-                        return;
-                    }
-
-                    foreach (var allOfSchema in addSchema.AllOf)
-                    {
-                        if (allOfSchema.Properties.Keys.Contains(propertyKey))
-                        {
-                            return;
-                        }
-                    }
-
-                    foreach (var oneOfSchema in addSchema.OneOf)
-                    {
-                        if (oneOfSchema.Properties.Keys.Contains(propertyKey))
-                        {
-                            return;
-                        }
-                    }
-
-                    mainSchema.Properties[propertyKey].Nullable = true;
+                    properties[property.Key] = property.Value;
                 }
             }
+
+            if (schema.AllOf != null)
+            {
+                foreach (var subschema in schema.AllOf)
+                {
+                    GetAllProperties(subschema, properties);
+                }
+            }
+
+            if (schema.OneOf != null)
+            {
+                foreach (var subschema in schema.OneOf)
+                {
+                    GetAllProperties(subschema, properties);
+                }
+            }
+
+            return properties;
         }
     }
 }
