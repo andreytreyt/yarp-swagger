@@ -1,4 +1,4 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi;
 using System.Collections.Generic;
 
 namespace Yarp.ReverseProxy.Swagger

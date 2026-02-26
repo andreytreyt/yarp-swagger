@@ -1,4 +1,4 @@
-using IdentityServer4.Models;
+using Duende.IdentityServer.Models;
 
 namespace Identity.Configs;
 
@@ -14,9 +14,9 @@ internal sealed class IdentityConfig
         public IReadOnlyList<string> AllowedScopes { get; init; } = [];
     }
     
-    public IEnumerable<IdentityServer4.Models.Client> GetClients()
+    public IEnumerable<Duende.IdentityServer.Models.Client> GetClients()
     {
-        return Clients.Select(x => new IdentityServer4.Models.Client
+        return Clients.Select(x => new Duende.IdentityServer.Models.Client
         {
             ClientId = x.ClientId,
             ClientSecrets =

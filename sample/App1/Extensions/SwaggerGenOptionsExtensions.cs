@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace App1.Extensions;
@@ -17,20 +17,10 @@ public static class SwaggerGenOptionsExtensions
             BearerFormat = "JWT",
             Scheme = JwtBearerDefaults.AuthenticationScheme
         });
-        
-        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
         {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = JwtBearerDefaults.AuthenticationScheme
-                    }
-                },
-                new string[] { }
-            }
+            [new OpenApiSecuritySchemeReference("bearer", document)] = []
         });
 
         return options;

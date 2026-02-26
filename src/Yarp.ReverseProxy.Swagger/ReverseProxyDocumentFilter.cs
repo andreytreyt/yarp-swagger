@@ -4,8 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Readers;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Yarp.ReverseProxy.Swagger.Extensions;
 using Yarp.ReverseProxy.Transforms.Builder;
@@ -15,7 +14,7 @@ namespace Yarp.ReverseProxy.Swagger
     public sealed class ReverseProxyDocumentFilter : IDocumentFilter
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IReadOnlyDictionary<string, OperationType> _operationTypeMapping;
+        private readonly IReadOnlyDictionary<string, HttpMethod> _operationTypeMapping;
         private readonly List<ITransformFactory> _factories;
         
         private ReverseProxyDocumentFilterConfig config;
@@ -31,16 +30,16 @@ namespace Yarp.ReverseProxy.Swagger
 
             configOptions.OnChange(x => { config = x; });
 
-            _operationTypeMapping = new Dictionary<string, OperationType>
+            _operationTypeMapping = new Dictionary<string, HttpMethod>
             {
-                { "GET", OperationType.Get },
-                { "POST", OperationType.Post },
-                { "PUT", OperationType.Put },
-                { "DELETE", OperationType.Delete },
-                { "PATCH", OperationType.Patch },
-                { "HEAD", OperationType.Head },
-                { "OPTIONS", OperationType.Options },
-                { "TRACE", OperationType.Trace },
+                { "GET", HttpMethod.Get },
+                { "POST", HttpMethod.Post },
+                { "PUT", HttpMethod.Put },
+                { "DELETE", HttpMethod.Delete },
+                { "PATCH", HttpMethod.Patch },
+                { "HEAD", HttpMethod.Head },
+                { "OPTIONS", HttpMethod.Options },
+                { "TRACE", HttpMethod.Trace },
             };
         }
 
@@ -82,7 +81,20 @@ namespace Yarp.ReverseProxy.Swagger
 
             var info = swaggerDoc.Info;
             var paths = new OpenApiPaths();
-            var components = new OpenApiComponents();
+            var components = new OpenApiComponents()
+            {
+                Schemas = new Dictionary<string, IOpenApiSchema>(),
+                Callbacks = new Dictionary<string, IOpenApiCallback>(),
+                Examples = new Dictionary<string, IOpenApiExample>(),
+                Extensions = new Dictionary<string, IOpenApiExtension>(),
+                Headers = new Dictionary<string, IOpenApiHeader>(),
+                Links = new Dictionary<string, IOpenApiLink>(),
+                Parameters = new Dictionary<string, IOpenApiParameter>(),
+                RequestBodies = new Dictionary<string, IOpenApiRequestBody>(),
+                Responses = new Dictionary<string, IOpenApiResponse>(),
+                SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>(),
+                PathItems = new Dictionary<string, IOpenApiPathItem>(),
+            };
             var securityRequirements = new List<OpenApiSecurityRequirement>();
             var tags = new List<OpenApiTag>();
 
@@ -132,7 +144,8 @@ namespace Yarp.ReverseProxy.Swagger
                             }
 
                             var stream = httpClient.GetStreamAsync(swaggerUrl).Result;
-                            var doc = new OpenApiStreamReader().Read(stream, out _);
+                            var docResult = OpenApiDocument.LoadAsync(stream).Result;
+                            var doc = docResult.Document;
 
                             if (swagger.MetadataPath == swaggerPath)
                             {
@@ -180,7 +193,10 @@ namespace Yarp.ReverseProxy.Swagger
                             }
 
                             components.Add(doc.Components, config.Swagger.RenameDuplicateSchemas);
-                            securityRequirements.AddRange(doc.SecurityRequirements);
+                            if(doc.Security != null)
+                            {
+                                securityRequirements.AddRange(doc.Security);
+                            }
                             tags.AddRange(doc.Tags);
                         }
                     }
@@ -189,9 +205,9 @@ namespace Yarp.ReverseProxy.Swagger
 
             swaggerDoc.Info = info;
             swaggerDoc.Paths = paths;
-            swaggerDoc.SecurityRequirements = securityRequirements;
+            swaggerDoc.Security = securityRequirements;
             swaggerDoc.Components = components;
-            swaggerDoc.Tags = tags;
+            swaggerDoc.Tags = tags.ToHashSet();
         }
 
         private static IReadOnlyDictionary<string, IEnumerable<string>> GetPublishedPaths(
@@ -222,8 +238,8 @@ namespace Yarp.ReverseProxy.Swagger
             return validRoutes;
         }
 
-        private void ApplySwaggerTransformation(List<OperationType> operationKeys,
-            KeyValuePair<string, OpenApiPathItem> path, string clusterKey)
+        private void ApplySwaggerTransformation(List<HttpMethod> operationKeys,
+            KeyValuePair<string, IOpenApiPathItem> path, string clusterKey)
         {
             var factories = _factories?.Where(x => x is ISwaggerTransformFactory).ToList();
 

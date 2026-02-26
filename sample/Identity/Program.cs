@@ -1,4 +1,5 @@
 using Identity.Configs;
+using Duende.IdentityServer.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,8 +7,8 @@ var identityConfig = builder.Configuration.GetSection("Identity").Get<IdentityCo
 
 builder.Services.AddIdentityServer()
     .AddDeveloperSigningCredential()
-    .AddInMemoryApiScopes(identityConfig.GetApiScopes())
-    .AddInMemoryClients(identityConfig.GetClients());
+    .AddInMemoryApiScopes(identityConfig.GetApiScopes().Cast<ApiScope>())
+    .AddInMemoryClients(identityConfig.GetClients().Cast<Client>());
 
 var app = builder.Build();
 

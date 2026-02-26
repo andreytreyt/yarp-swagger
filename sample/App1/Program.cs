@@ -1,4 +1,3 @@
-using App1;
 using App1.Configs;
 using App1.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

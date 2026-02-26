@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Yarp.ReverseProxy.Swagger.Extensions
 {
@@ -11,63 +11,94 @@ namespace Yarp.ReverseProxy.Swagger.Extensions
             {
                 return;
             }
-
-            foreach (var data in components.Extensions)
+            
+            if(components.Extensions != null)
             {
-                source.Extensions.TryAdd(data.Key, data.Value);
-            }
-
-            foreach (var data in components.Examples)
-            {
-                source.Examples.TryAdd(data.Key, data.Value);
-            }
-
-            foreach (var data in components.Callbacks)
-            {
-                source.Callbacks.TryAdd(data.Key, data.Value);
-            }
-
-            foreach (var data in components.Schemas)
-            {
-                bool added = source.Schemas.TryAdd(data.Key, data.Value);
-                int i = 1;
-                while(!added && renameDuplicateSchemas)
+                foreach (var data in components.Extensions)
                 {
-                    i++;
-                    var key = $"{data.Key}{i}";
-                    data.Value.Reference.Id = key;
-                    added = source.Schemas.TryAdd(key, data.Value);
+                    source.Extensions.TryAdd(data.Key, data.Value);
                 }
             }
 
-            foreach (var data in components.SecuritySchemes)
+            if(components.Examples != null)
             {
-                source.SecuritySchemes.TryAdd(data.Key, data.Value);
+                foreach (var data in components.Examples)
+                {
+                    source.Examples.TryAdd(data.Key, data.Value);
+                }
+            }
+            
+            if(components.Callbacks != null)
+            {
+                foreach (var data in components.Callbacks)
+                {
+                    source.Callbacks.TryAdd(data.Key, data.Value);
+                }
             }
 
-            foreach (var data in components.Links)
+            if(components.Schemas != null)
             {
-                source.Links.TryAdd(data.Key, data.Value);
+                foreach ((string key, IOpenApiSchema openApiSchema) in components.Schemas)
+                {
+                    bool added = source.Schemas.TryAdd(key, openApiSchema);
+                    int i = 1;
+                    while(!added && renameDuplicateSchemas)
+                    {
+                        i++;
+                        var newKey = $"{key}{i}";
+                        var newOpenApiSchema = openApiSchema as OpenApiSchema;
+                        newOpenApiSchema.Id = newKey;
+                        added = source.Schemas.TryAdd(newKey, newOpenApiSchema);
+                    }
+                }
             }
 
-            foreach (var data in components.Headers)
+            if(components.SecuritySchemes != null)
             {
-                source.Headers.TryAdd(data.Key, data.Value);
+                foreach (var data in components.SecuritySchemes)
+                {
+                    source.SecuritySchemes.TryAdd(data.Key, data.Value);
+                }
             }
 
-            foreach (var data in components.Responses)
+            if(components.Links != null)
             {
-                source.Responses.TryAdd(data.Key, data.Value);
+                foreach (var data in components.Links)
+                {
+                    source.Links.TryAdd(data.Key, data.Value);
+                }
             }
 
-            foreach (var data in components.RequestBodies)
+            if(components.Headers != null)
             {
-                source.RequestBodies.TryAdd(data.Key, data.Value);
+                foreach (var data in components.Headers)
+                {
+                    source.Headers.TryAdd(data.Key, data.Value);
+                }
             }
 
-            foreach (var data in components.Parameters)
+            if(components.Responses != null)
             {
-                source.Parameters.TryAdd(data.Key, data.Value);
+                foreach (var data in components.Responses)
+                {
+                    source.Responses.TryAdd(data.Key, data.Value);
+                }
+            }
+
+            if(components.RequestBodies != null)
+            {
+                foreach (var data in components.RequestBodies)
+                {
+                    source.RequestBodies.TryAdd(data.Key, data.Value);
+                }
+            }
+
+            if(components.Parameters != null)
+            {
+                foreach (var data in components.Parameters)
+                {
+                    source.Parameters.TryAdd(data.Key, data.Value);
+                }
             }
         }
     }
