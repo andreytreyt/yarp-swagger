@@ -193,11 +193,16 @@ namespace Yarp.ReverseProxy.Swagger
                             }
 
                             components.Add(doc.Components, config.Swagger.RenameDuplicateSchemas);
-                            if(doc.Security != null)
+
+                            if (doc.Security != null)
                             {
                                 securityRequirements.AddRange(doc.Security);
                             }
-                            tags.AddRange(doc.Tags);
+
+                            if (doc.Tags != null)
+                            {
+                                tags.AddRange(doc.Tags);
+                            }
                         }
                     }
                 }
